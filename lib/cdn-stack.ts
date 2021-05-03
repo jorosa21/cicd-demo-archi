@@ -13,7 +13,7 @@ export class CdnStack extends Stack {
     this.sourceBucket = cdn.s3Bucket as Bucket;
     this.distributionId = cdn.cloudFrontWebDistribution.distributionId;
     new CfnOutput(this, 'URL', {
-      value: 'https://' + cdn.cloudFrontWebDistribution.domainName,
+      value: 'https://' + cdn.cloudFrontWebDistribution.domainName + '/',
     });
   }
 
