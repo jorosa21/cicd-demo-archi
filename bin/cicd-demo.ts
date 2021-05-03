@@ -9,7 +9,7 @@ const pipelineEnv = {
   region: process.env.CDK_DEFAULT_REGION,
   account: process.env.CDK_DEFAULT_ACCOUNT,
 };
-new InfraStack(app, 'Infra', {
+new InfraStack(app, 'CiCdDemo', {
   githubTokenName: 'github-token',
   githubOwner: 'engr-lynx',
   githubRepo: 'cicd-demo',
