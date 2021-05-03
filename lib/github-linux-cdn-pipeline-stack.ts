@@ -99,10 +99,11 @@ export class GithubLinuxCdnPipelineStack extends Stack {
         distributionArn,
       ],
     });
+    const distributionCode = Code.fromAsset(join(__dirname, 'distribution-handler'));
     const distributionHandler = new Function(this, 'DistributionHandler', {
       runtime: Runtime.PYTHON_3_8,
       handler: 'distribution.on_event',
-      code: Code.fromAsset(join(__dirname, 'distribution-handler')),
+      code: distributionCode,
       timeout: Duration.minutes(1),
       logRetention: RetentionDays.ONE_DAY,
       initialPolicy: [
