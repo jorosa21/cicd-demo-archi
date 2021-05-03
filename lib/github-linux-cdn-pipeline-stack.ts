@@ -123,9 +123,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
         cacheInvalidate,
       ],
     };
-    const pipelineName = 'GithubLinuxCdnPipeline';
-    new Pipeline(this, pipelineName, {
-      pipelineName,
+    new Pipeline(this, 'GithubLinuxCdnPipeline', {
       stages: [
         sourceStage,
         buildStage,

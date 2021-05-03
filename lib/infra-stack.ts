@@ -40,9 +40,7 @@ export class InfraStack extends Stack {
       environment: linuxEnvironment,
       buildCommand: 'npm run build', // to compile TypeScript
     });
-    const pipelineName = 'InfraPipeline';
-    const pipeline = new CdkPipeline(this, pipelineName, {
-      pipelineName,
+    const infraPipeline = new CdkPipeline(this, 'InfraPipeline', {
       cloudAssemblyArtifact: cdkOutput,
       sourceAction: githubSource,
       synthAction: cdkSynth,
@@ -55,7 +53,7 @@ export class InfraStack extends Stack {
     const siteStage = new AngularSiteStage(this, 'AngularSite', {
       env: siteEnv,
     });
-    pipeline.addApplicationStage(siteStage);
+    infraPipeline.addApplicationStage(siteStage);
   }
 
 }
