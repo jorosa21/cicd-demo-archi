@@ -4,6 +4,7 @@ import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { AngularSiteStage } from './angular-site-stage';
+import { NetServiceStage } from './net-service-stage';
 
 export interface InfraProps {
   githubTokenName: string,
@@ -54,6 +55,8 @@ export class InfraStack extends Stack {
       env: siteEnv,
     });
     infraPipeline.addApplicationStage(siteStage);
+    const apiStage = new NetServiceStage(this, 'NetService');
+    infraPipeline.addApplicationStage(apiStage);
   }
 
 }
