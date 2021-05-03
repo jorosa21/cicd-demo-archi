@@ -9,11 +9,11 @@ export class AngularSiteStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
-    const webEnv = {
-      region: 'us-east-1', // use us-east-1 to allow easy CloudFront integration
-    }    
+    const siteEnv = {
+      region: 'us-east-1', // use us-east-1 to allow simple CloudFront integration
+    };
     const website = new CdnStack(this, 'Website', {
-      env: webEnv,
+      env: siteEnv,
     });
     new GithubLinuxCdnPipelineStack(this, 'AngularPipeline', {
       githubTokenName: 'github-token',
@@ -22,7 +22,7 @@ export class AngularSiteStage extends Stage {
       s3Bucket: website.sourceBucket,
       distributionId: website.distributionId,
     }, {
-      env: webEnv,
+      env: siteEnv,
     });
   }
 

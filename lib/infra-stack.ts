@@ -5,7 +5,7 @@ import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { AngularSiteStage } from './angular-site-stage';
 
-export interface WebsiteInfraPipelineProps {
+export interface InfraProps {
   githubTokenName: string,
   githubOwner: string,
   githubRepo: string,
@@ -14,21 +14,21 @@ export interface WebsiteInfraPipelineProps {
 /**
  * The stack that defines the infrastructure pipeline
  */
-export class InfraPipelineStack extends Stack {
+export class InfraStack extends Stack {
 
-  constructor(scope: Construct, id: string, websiteInfraPipelineProps?: WebsiteInfraPipelineProps, props?: StackProps) {
-    if (websiteInfraPipelineProps == null) {
+  constructor(scope: Construct, id: string, infraProps?: InfraProps, props?: StackProps) {
+    if (infraProps == null) {
       return
     }
     super(scope, id, props);
     const githubOutput = new Artifact('GithubOutput');
-    const githubToken = SecretValue.secretsManager(websiteInfraPipelineProps.githubTokenName);
+    const githubToken = SecretValue.secretsManager(infraProps.githubTokenName);
     const githubSource = new GitHubSourceAction({
       actionName: 'GithubSource',
       output: githubOutput,
       oauthToken: githubToken,
-      owner: websiteInfraPipelineProps.githubOwner,
-      repo: websiteInfraPipelineProps.githubRepo,
+      owner: infraProps.githubOwner,
+      repo: infraProps.githubRepo,
     });
     const cdkOutput = new Artifact('CdkOutput');
     const linuxEnvironment = {
@@ -40,7 +40,7 @@ export class InfraPipelineStack extends Stack {
       environment: linuxEnvironment,
       buildCommand: 'npm run build', // to compile TypeScript
     });
-    const pipelineName = 'WebsiteInfraPipeline';
+    const pipelineName = 'InfraPipeline';
     const pipeline = new CdkPipeline(this, pipelineName, {
       pipelineName,
       cloudAssemblyArtifact: cdkOutput,
