@@ -49,7 +49,13 @@ export class InfraStack extends Stack {
     });
     // This is where we add the application stages
     // ...
-    pipeline.addApplicationStage(new AngularSiteStage(this, 'AngularSite'));
+    const siteEnv = {
+      region: 'us-east-1', // use us-east-1 to allow simple CloudFront integration
+    };
+    const siteStage = new AngularSiteStage(this, 'AngularSite', {
+      env: siteEnv,
+    });
+    pipeline.addApplicationStage(siteStage);
   }
 
 }
