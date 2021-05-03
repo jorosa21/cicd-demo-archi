@@ -5,7 +5,7 @@ import { InfraStack } from '../lib/infra-stack';
 test('Empty Stack', () => {
     const app = new App();
     // WHEN
-    const stack = new InfraStack(app, 'Infra');
+    const stack = new InfraStack(app, 'CiCdDemo');
     // THEN
     expectCDK(stack).to(matchTemplate({
       "Resources": {}
