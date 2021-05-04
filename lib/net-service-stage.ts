@@ -9,7 +9,7 @@ export class NetServiceStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
-    const api = new ServerlessStack(this, 'Api');
+    // const api = new ServerlessStack(this, 'Api');
     // new GithubLinuxServerlessPipelineStack(this, 'NetPipeline', {
     //   githubTokenName: 'github-token',
     //   githubOwner: 'engr-lynx',

@@ -6,7 +6,7 @@ import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { AngularSiteStage } from './angular-site-stage';
 import { NetServiceStage } from './net-service-stage';
 
-export interface InfraProps {
+export interface InfraProps extends StackProps {
   githubTokenName: string,
   githubOwner: string,
   githubRepo: string,
@@ -17,11 +17,11 @@ export interface InfraProps {
  */
 export class InfraStack extends Stack {
 
-  constructor(scope: Construct, id: string, infraProps?: InfraProps, props?: StackProps) {
+  constructor(scope: Construct, id: string, infraProps?: InfraProps) {
     if (infraProps == null) {
       return
     }
-    super(scope, id, props);
+    super(scope, id, infraProps);
     const githubOutput = new Artifact('GithubOutput');
     const githubToken = SecretValue.secretsManager(infraProps.githubTokenName);
     const githubSource = new GitHubSourceAction({

@@ -1,15 +1,10 @@
-import { join } from 'path';
-import { Construct, Stack, StackProps, SecretValue, Arn, Duration } from '@aws-cdk/core';
+import { Construct, Stack, StackProps, SecretValue } from '@aws-cdk/core';
 import { Repository } from '@aws-cdk/aws-ecr';
-import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
-import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
-import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
-import { LambdaApplication } from '@aws-cdk/aws-codedeploy';
+import { PipelineProject, LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { RetentionDays } from '@aws-cdk/aws-logs';
+import { GitHubSourceAction, CodeBuildAction } from '@aws-cdk/aws-codepipeline-actions';
 
-export interface GithubLinuxServerlessPipelineProps {
+export interface GithubLinuxServerlessPipelineProps extends StackProps {
   githubTokenName: string,
   githubOwner: string,
   githubRepo: string,
@@ -18,9 +13,8 @@ export interface GithubLinuxServerlessPipelineProps {
 
 export class GithubLinuxServerlessPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, githubLinuxServerlessPipelineProps: GithubLinuxServerlessPipelineProps,
-      props?: StackProps) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, githubLinuxServerlessPipelineProps: GithubLinuxServerlessPipelineProps) {
+    super(scope, id, githubLinuxServerlessPipelineProps);
     const githubOutput = new Artifact('GithubOutput');
     const githubToken = SecretValue.secretsManager(githubLinuxServerlessPipelineProps.githubTokenName);
     const githubSource = new GitHubSourceAction({

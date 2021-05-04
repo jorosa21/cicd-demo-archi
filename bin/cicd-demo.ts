@@ -2,6 +2,7 @@
 import 'source-map-support/register';
 import { App } from '@aws-cdk/core';
 import { InfraStack } from '../lib/infra-stack';
+import { ServerlessStack } from '../lib/serverless-stack';
 
 const app = new App();
 // cross-region deployment so the environment need to be explicit
@@ -13,7 +14,7 @@ new InfraStack(app, 'CiCdDemo', {
   githubTokenName: 'github-token',
   githubOwner: 'engr-lynx',
   githubRepo: 'cicd-demo',
-}, {
   env: appEnv,
 });
+new ServerlessStack(app, 'Service')
 app.synth();

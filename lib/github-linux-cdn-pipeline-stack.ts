@@ -8,7 +8,7 @@ import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 
-export interface GithubLinuxCdnPipelineProps {
+export interface GithubLinuxCdnPipelineProps extends StackProps {
   githubTokenName: string,
   githubOwner: string,
   githubRepo: string,
@@ -18,8 +18,8 @@ export interface GithubLinuxCdnPipelineProps {
 
 export class GithubLinuxCdnPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, githubLinuxCdnPipelineProps: GithubLinuxCdnPipelineProps, props?: StackProps) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, githubLinuxCdnPipelineProps: GithubLinuxCdnPipelineProps) {
+    super(scope, id, githubLinuxCdnPipelineProps);
     const githubOutput = new Artifact('GithubOutput');
     const githubToken = SecretValue.secretsManager(githubLinuxCdnPipelineProps.githubTokenName);
     const githubSource = new GitHubSourceAction({
