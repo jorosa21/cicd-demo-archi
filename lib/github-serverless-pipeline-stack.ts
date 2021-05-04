@@ -44,8 +44,8 @@ export class GithubServerlessPipelineStack extends Stack {
       ],
     };
     const serviceRepository = new Repository(this, 'ServiceRepository');
-    const dockerLoginCmd = 'aws ecr get-login-password --region ' + super.region
-      + ' | docker login --username AWS --password-stdin ' + serviceRepository.repositoryUri;
+    const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin '
+      + serviceRepository.repositoryUri;
     const serviceName = githubServerlessPipelineProps.serviceName;
     const latestTag = serviceName + ':latest';
     const latestUri = serviceRepository.repositoryUri + '/' + latestTag;
