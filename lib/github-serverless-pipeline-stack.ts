@@ -1,5 +1,5 @@
 import { Construct, Stack, StackProps, SecretValue } from '@aws-cdk/core';
-import { Repository } from '@aws-cdk/aws-ecr';
+import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction } from '@aws-cdk/aws-codepipeline-actions';
@@ -11,7 +11,6 @@ export interface GithubServerlessPipelineProps extends StackProps {
   infraGithubTokenName: string,
   infraGithubOwner: string,
   infraGithubRepo: string,
-  serviceName: string,
 }
 
 export class GithubServerlessPipelineStack extends Stack {
@@ -44,14 +43,11 @@ export class GithubServerlessPipelineStack extends Stack {
       ],
     };
     const serviceRepository = new Repository(this, 'ServiceRepository');
-    const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin '
-      + serviceRepository.repositoryUri;
-    const serviceName = githubServerlessPipelineProps.serviceName;
-    const latestTag = serviceName + ':latest';
-    const latestUri = serviceRepository.repositoryUri + '/' + latestTag;
-    const dockerBuildCmd = 'docker build -t ' + serviceName + ' .';
-    const dockerTagCmd = 'docker tag ' + latestTag + ' ' + latestUri;
-    const dockerPushCmd = 'docker push ' + latestUri;
+    const registry = serviceRepository.repositoryUri.split('/', 1)[0];
+    const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin ' + registry;
+    const serviceTag = serviceRepository.repositoryUri;
+    const dockerBuildCmd = 'docker build -t ' + serviceTag + ' .';
+    const dockerPushCmd = 'docker push ' + serviceTag;
     const serviceSpec = BuildSpec.fromObject({
       version: '0.2',
       phases: {
@@ -59,10 +55,7 @@ export class GithubServerlessPipelineStack extends Stack {
           commands: dockerLoginCmd,
         },
         build: {
-          commands: [
-            dockerBuildCmd,
-            dockerTagCmd,
-          ],
+          commands: dockerBuildCmd,
         },
         post_build: {
           commands: dockerPushCmd,
@@ -71,11 +64,14 @@ export class GithubServerlessPipelineStack extends Stack {
     });
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
+      privileged: true,
     };
     const serviceProject = new PipelineProject(this, 'ServiceProject', {
       environment: linuxEnvironment,
       buildSpec: serviceSpec,
     });
+    AuthorizationToken.grantRead(serviceProject);
+    serviceRepository.grantPullPush(serviceProject);
     const serviceBuild = new CodeBuildAction({
       actionName: 'ServiceBuild',
       project: serviceProject,

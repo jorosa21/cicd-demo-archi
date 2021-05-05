@@ -15,7 +15,6 @@ export class NetServiceStage extends Stage {
       infraGithubTokenName: 'github-token',
       infraGithubOwner: 'engr-lynx',
       infraGithubRepo: 'cicd-demo',
-      serviceName: 'account-management',
     });
   }
 
