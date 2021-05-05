@@ -2,7 +2,7 @@ import { Construct, Stack, StackProps, SecretValue } from '@aws-cdk/core';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeBuildAction } from '@aws-cdk/aws-codepipeline-actions';
+import { GitHubSourceAction, CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
 
 export interface GithubServerlessPipelineProps extends StackProps {
   serviceGithubTokenName: string,
@@ -42,13 +42,13 @@ export class GithubServerlessPipelineStack extends Stack {
         infraSource,
       ],
     };
-    const serviceRepository = new Repository(this, 'ServiceRepository');
-    const registry = serviceRepository.repositoryUri.split('/', 1)[0];
+    const dockerRepository = new Repository(this, 'DockerRepository');
+    const registry = dockerRepository.repositoryUri.split('/', 1)[0];
     const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin ' + registry;
-    const serviceTag = serviceRepository.repositoryUri;
-    const dockerBuildCmd = 'docker build -t ' + serviceTag + ' .';
-    const dockerPushCmd = 'docker push ' + serviceTag;
-    const serviceSpec = BuildSpec.fromObject({
+    const dockerTag = dockerRepository.repositoryUri;
+    const dockerBuildCmd = 'docker build -t ' + dockerTag + ' .';
+    const dockerPushCmd = 'docker push ' + dockerTag;
+    const dockerSpec = BuildSpec.fromObject({
       version: '0.2',
       phases: {
         pre_build: {
@@ -62,45 +62,87 @@ export class GithubServerlessPipelineStack extends Stack {
         }
       },
     });
-    const linuxEnvironment = {
+    const linuxPrivilegedEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
       privileged: true,
     };
-    const serviceProject = new PipelineProject(this, 'ServiceProject', {
-      environment: linuxEnvironment,
-      buildSpec: serviceSpec,
+    const dockerProject = new PipelineProject(this, 'DockerProject', {
+      environment: linuxPrivilegedEnv,
+      buildSpec: dockerSpec,
     });
-    AuthorizationToken.grantRead(serviceProject);
-    serviceRepository.grantPullPush(serviceProject);
-    const serviceBuild = new CodeBuildAction({
-      actionName: 'ServiceBuild',
-      project: serviceProject,
+    AuthorizationToken.grantRead(dockerProject);
+    dockerRepository.grantPullPush(dockerProject);
+    const dockerBuild = new CodeBuildAction({
+      actionName: 'DockerBuild',
+      project: dockerProject,
       input: serviceOutput,
+    });
+    const serviceBaseName = this.node.tryGetContext('serviceBaseName');
+    const serviceName = serviceBaseName; // change when multiple services already
+    const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
+      + ' ' + serviceName;
+    const serviceTemplateFilename = serviceName + '.template.json';
+    const cdkSpec = BuildSpec.fromObject({
+      version: '0.2',
+      phases: {
+        pre_build: {
+          commands: 'npm ci',
+        },
+        build: {
+          commands: [
+            'npm run build',
+            cdkSynthCmd,
+          ]
+        }
+      },
+      artifacts: {
+        'base-directory': 'cdk.out',
+        files: [
+          serviceTemplateFilename,
+        ],
+      },
+    });
+    const linuxEnv = {
+      buildImage: LinuxBuildImage.STANDARD_5_0,
+    };
+    const cdkProject = new PipelineProject(this, 'CdkProject', {
+      environment: linuxEnv,
+      buildSpec: cdkSpec,
+    });
+    const cdkOutput = new Artifact('CdkOutput');
+    const cdkBuild = new CodeBuildAction({
+      actionName: 'CdkBuild',
+      project: cdkProject,
+      input: infraOutput,
+      outputs: [
+        cdkOutput,
+      ],
     });
     const buildStage = {
       stageName: 'Build',
       actions: [
-        serviceBuild,
+        dockerBuild,
+        cdkBuild,
       ],
     };
-
-    // const lambdaApp = LambdaApplication.fromLambdaApplicationName(this, 'LambdaApp', '');
-    // const s3Deploy = new S3DeployAction({
-    //   actionName: 'S3Deploy',
-    //   input: buildOutput,
-    //   bucket: githubServerlessPipelineProps.ecrRepository,
-    // });
-    // const deployStage = {
-    //   stageName: 'Deploy',
-    //   actions: [
-    //     s3Deploy,
-    //   ],
-    // };
+    const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
+    const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
+      actionName: 'LambdaDeploy',
+      stackName: serviceName,
+      templatePath: lambdaTemplate,
+      adminPermissions: true,
+    });
+    const deployStage = {
+      stageName: 'Deploy',
+      actions: [
+        lambdaDeploy,
+      ],
+    };
     new Pipeline(this, 'GithubServerlessPipeline', {
       stages: [
         sourceStage,
         buildStage,
-        // deployStage,
+        deployStage,
       ],
     });
   }

@@ -5,12 +5,11 @@ import { ApiGatewayToLambda } from '@aws-solutions-constructs/aws-apigateway-lam
 
 export class ServerlessStack extends Stack {
 
-  public readonly imageRepository: Repository;
-
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-    this.imageRepository = new Repository(this, 'ImageRepository');
-    const lambdaImage = DockerImageCode.fromEcr(this.imageRepository);
+    const imageRepoName = this.node.tryGetContext('imageRepoName');
+    const imageRepo = Repository.fromRepositoryName(this, 'ImageRepo', imageRepoName);
+    const lambdaImage = DockerImageCode.fromEcr(imageRepo);
     const lambdaObj = new DockerImageFunction(this, 'LambdaObj', {
       code: lambdaImage,
     })

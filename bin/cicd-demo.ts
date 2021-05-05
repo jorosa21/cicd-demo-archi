@@ -16,5 +16,8 @@ new InfraStack(app, 'CiCdDemo', {
   githubRepo: 'cicd-demo',
   env: appEnv,
 });
-new ServerlessStack(app, 'Service')
+const serviceBaseName = 'Service';
+app.node.setContext('serviceBaseName', serviceBaseName);
+const serviceName = serviceBaseName; // change when multiple services already
+new ServerlessStack(app, serviceName);
 app.synth();
