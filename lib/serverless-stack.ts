@@ -1,6 +1,7 @@
-import { Construct, Stack, StackProps, CfnOutput } from '@aws-cdk/core';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { Repository } from '@aws-cdk/aws-ecr';
 import { DockerImageFunction, DockerImageCode } from '@aws-cdk/aws-lambda';
+import { AuthorizationType } from '@aws-cdk/aws-apigateway';
 import { ApiGatewayToLambda } from '@aws-solutions-constructs/aws-apigateway-lambda';
 
 export class ServerlessStack extends Stack {
@@ -12,12 +13,16 @@ export class ServerlessStack extends Stack {
     const lambdaImage = DockerImageCode.fromEcr(imageRepo);
     const lambdaObj = new DockerImageFunction(this, 'LambdaObj', {
       code: lambdaImage,
-    })
-    const serverless = new ApiGatewayToLambda(this, 'Serverless', {
-      existingLambdaObj: lambdaObj,
     });
-    new CfnOutput(this, 'URL', {
-      value: 'https://' + serverless.apiGateway.deploymentStage.urlForPath,
+    const methodOpts = {
+      authorizationType: AuthorizationType.NONE,
+    };
+    const apiGatewayProps = {
+      defaultMethodOptions: methodOpts,
+    }
+    new ApiGatewayToLambda(this, 'Serverless', {
+      existingLambdaObj: lambdaObj,
+      apiGatewayProps,
     });
   }
 
