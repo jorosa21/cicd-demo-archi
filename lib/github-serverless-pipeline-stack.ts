@@ -91,7 +91,7 @@ export class GithubServerlessPipelineStack extends Stack {
         },
         build: {
           commands: [
-            'npm run build',
+            // 'npm run build',
             cdkSynthCmd,
           ]
         }
