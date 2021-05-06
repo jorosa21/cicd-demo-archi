@@ -78,7 +78,8 @@ export class GithubServerlessPipelineStack extends Stack {
       input: serviceOutput,
     });
     const serviceBaseName = this.node.tryGetContext('serviceBaseName');
-    const serviceName = serviceBaseName; // change when multiple services already
+    // ToDo: loop and add suffix when already deploying multiple services
+    const serviceName = serviceBaseName;
     const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
       + ' ' + serviceName;
     const serviceTemplateFilename = serviceName + '.template.json';

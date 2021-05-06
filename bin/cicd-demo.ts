@@ -16,12 +16,14 @@ const appEnv = {
   region: process.env.CDK_DEFAULT_REGION,
   account: process.env.CDK_DEFAULT_ACCOUNT,
 };
-new InfraStack(app, 'CiCdDemo', {
+// ToDo: use context for these instead of hardcoded.
+new InfraStack(app, 'Infra', {
   githubTokenName: 'github-token',
   githubOwner: 'engr-lynx',
   githubRepo: 'cicd-demo',
   env: appEnv,
 });
-const serviceName = serviceBaseName; // change when multiple services already
+// ToDo: loop and add suffix when already deploying multiple services
+const serviceName = serviceBaseName;
 new ServerlessStack(app, serviceName);
 app.synth();

@@ -15,6 +15,7 @@ export class ServerlessStack extends Stack {
       code: lambdaImage,
     });
     const methodOpts = {
+      // ToDo: change type to custom or Cognito once the auth mechanism is added
       authorizationType: AuthorizationType.NONE,
     };
     const apiGatewayProps = {

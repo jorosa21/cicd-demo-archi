@@ -1,14 +1,22 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { GithubServerlessPipelineStack } from './github-serverless-pipeline-stack';
+import { SiteStack } from './site-stack';
 
 /**
- * Deployable unit of .Net Service
+ * Deployable unit of Angular site
  */
-export class NetServiceStage extends Stage {
+export class AppDeployStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
-    new GithubServerlessPipelineStack(this, 'NetPipeline', {
+    const websiteEnv = {
+      region: 'us-east-1', // use us-east-1 to allow simple CloudFront integration
+    };
+    new SiteStack(this, 'Website', {
+      env: websiteEnv,
+    });
+    new GithubServerlessPipelineStack(this, 'ServicePipeline', {
+      // ToDo: use context for these instead of hardcoded.
       serviceGithubTokenName: 'github-token',
       serviceGithubOwner: 'engr-lynx',
       serviceGithubRepo: 'net-sample',

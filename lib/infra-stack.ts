@@ -3,8 +3,7 @@ import { GitHubSourceAction } from '@aws-cdk/aws-codepipeline-actions';
 import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
-import { AngularSiteStage } from './angular-site-stage';
-import { NetServiceStage } from './net-service-stage';
+import { AppDeployStage } from './app-deploy-stage';
 
 export interface InfraProps extends StackProps {
   githubTokenName: string,
@@ -48,15 +47,8 @@ export class InfraStack extends Stack {
     });
     // This is where we add the application stages
     // ...
-    const siteEnv = {
-      region: 'us-east-1', // use us-east-1 to allow simple CloudFront integration
-    };
-    const siteStage = new AngularSiteStage(this, 'AngularSite', {
-      env: siteEnv,
-    });
-    infraPipeline.addApplicationStage(siteStage);
-    const apiStage = new NetServiceStage(this, 'NetService');
-    infraPipeline.addApplicationStage(apiStage);
+    const appDeploy = new AppDeployStage(this, 'AppDeploy');
+    infraPipeline.addApplicationStage(appDeploy);
   }
 
 }
