@@ -1,6 +1,7 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { GithubServerlessPipelineStack } from './github-serverless-pipeline-stack';
-import { SiteStack } from './site-stack';
+import { GithubLinuxCdnPipelineStack } from './github-linux-cdn-pipeline-stack';
+import { CdnStack } from './cdn-stack';
 
 /**
  * Deployable unit of Angular site
@@ -9,11 +10,20 @@ export class AppDeployStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
-    const websiteEnv = {
-      region: 'us-east-1', // use us-east-1 to allow simple CloudFront integration
+    const siteEnv = {
+      region: 'us-east-1', // use us-east-1 for distribution and supporting services
     };
-    new SiteStack(this, 'Website', {
-      env: websiteEnv,
+    const site = new CdnStack(this, 'Site', {
+      env: siteEnv,
+    });
+    new GithubLinuxCdnPipelineStack(this, 'SitePipeline', {
+      // ToDo: use context for these instead of hardcoded.
+      githubTokenName: 'github-token',
+      githubOwner: 'engr-lynx',
+      githubRepo: 'angular-sample',
+      s3Bucket: site.sourceBucket,
+      distributionId: site.distributionId,
+      env: siteEnv,
     });
     new GithubServerlessPipelineStack(this, 'ServicePipeline', {
       // ToDo: use context for these instead of hardcoded.
