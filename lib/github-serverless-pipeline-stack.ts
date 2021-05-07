@@ -139,6 +139,7 @@ export class GithubServerlessPipelineStack extends Stack {
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
+      // ToDo: use variable serviceName when already deploying multiple services
       stackName: serviceName,
       templatePath: lambdaTemplate,
       adminPermissions: true,

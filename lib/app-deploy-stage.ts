@@ -20,6 +20,7 @@ export class AppDeployStage extends Stage {
     const sitePipelineCache = new PipelineCacheStack(this, 'SitePipelineCache', {
       env: siteEnv,
     });
+    const sitePipelineEnableTestStage = this.node.tryGetContext('SitePipeline:enableTestStage');  
     new GithubLinuxCdnPipelineStack(this, 'SitePipeline', {
       // ToDo: use context for these instead of hardcoded.
       githubTokenName: 'github-token',
@@ -28,6 +29,7 @@ export class AppDeployStage extends Stage {
       distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
       pipelineCache: sitePipelineCache.bucket,
+      enableTestStage: sitePipelineEnableTestStage,
       env: siteEnv,
     });
     const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
