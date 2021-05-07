@@ -1,5 +1,5 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
-import { Bucket } from '@aws-cdk/aws-s3';
+import { PipelineCacheStack } from './pipeline-cache-stack';
 import { GithubServerlessPipelineStack } from './github-serverless-pipeline-stack';
 import { GithubLinuxCdnPipelineStack } from './github-linux-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
@@ -17,16 +17,20 @@ export class AppDeployStage extends Stage {
     const site = new CdnStack(this, 'Site', {
       env: siteEnv,
     });
+    const sitePipelineCache = new PipelineCacheStack(this, 'SitePipelineCache', {
+      env: siteEnv,
+    });
     new GithubLinuxCdnPipelineStack(this, 'SitePipeline', {
       // ToDo: use context for these instead of hardcoded.
       githubTokenName: 'github-token',
       githubOwner: 'engr-lynx',
       githubRepo: 'angular-sample',
-      s3Bucket: site.sourceBucket,
+      distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
+      pipelineCache: sitePipelineCache.bucket,
       env: siteEnv,
     });
-    const servicePipelineCache = new Bucket(this, 'ServicePipelineCache');
+    const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
     // ToDo: loop and add suffix when already deploying multiple services
     new GithubServerlessPipelineStack(this, 'ServicePipeline', {
       // ToDo: use context for these instead of hardcoded.
@@ -36,7 +40,7 @@ export class AppDeployStage extends Stage {
       infraGithubTokenName: 'github-token',
       infraGithubOwner: 'engr-lynx',
       infraGithubRepo: 'cicd-demo',
-      pipelineCache: servicePipelineCache,
+      pipelineCache: servicePipelineCache.bucket,
     });
   }
 

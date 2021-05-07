@@ -12,8 +12,9 @@ export interface GithubLinuxCdnPipelineProps extends StackProps {
   githubTokenName: string,
   githubOwner: string,
   githubRepo: string,
-  s3Bucket: Bucket,
+  distributionSource: Bucket,
   distributionId: string,
+  pipelineCache: Bucket,
 }
 
 export class GithubLinuxCdnPipelineStack extends Stack {
@@ -35,7 +36,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
         githubSource,
       ],
     };
-    const cdnPipelineCache = new Bucket(this, 'CdnPipelineCache');
+    const cdnPipelineCache = githubLinuxCdnPipelineProps.pipelineCache;
     const buildCache = Cache.bucket(cdnPipelineCache, {
       prefix: 'build/'
     });
@@ -85,7 +86,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
     const s3Deploy = new S3DeployAction({
       actionName: 'S3Deploy',
       input: buildOutput,
-      bucket: githubLinuxCdnPipelineProps.s3Bucket,
+      bucket: githubLinuxCdnPipelineProps.distributionSource,
     });
     const deployStage = {
       stageName: 'Deploy',
