@@ -3,7 +3,7 @@ import { Construct, Stack, StackProps, SecretValue, Arn, Duration } from '@aws-c
 import { Bucket } from '@aws-cdk/aws-s3';
 import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
-import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
+import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
@@ -38,8 +38,11 @@ export class GithubLinuxCdnPipelineStack extends Stack {
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
+    const cacheBucket = new Bucket(this, 'CacheBucket');
+    const cache = Cache.bucket(cacheBucket);
     const linuxBuildProject = new PipelineProject(this, 'LinuxBuildProject', {
       environment: linuxEnvironment,
+      cache,
     });
     const buildOutput = new Artifact('BuildOutput');
     const linuxBuild = new CodeBuildAction({
