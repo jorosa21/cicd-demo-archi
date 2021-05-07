@@ -59,7 +59,7 @@ export class GithubServerlessPipelineStack extends Stack {
         },
         post_build: {
           commands: dockerPushCmd,
-        }
+        },
       },
     });
     const linuxPrivilegedEnv = {
@@ -90,11 +90,8 @@ export class GithubServerlessPipelineStack extends Stack {
           commands: 'npm ci',
         },
         build: {
-          commands: [
-            // 'npm run build',
-            cdkSynthCmd,
-          ]
-        }
+          commands: cdkSynthCmd,
+        },
       },
       artifacts: {
         'base-directory': 'cdk.out',

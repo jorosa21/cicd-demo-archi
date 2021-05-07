@@ -38,7 +38,6 @@ export class InfraStack extends Stack {
       sourceArtifact: githubOutput,
       cloudAssemblyArtifact: cdkOutput,
       environment: linuxEnvironment,
-      // buildCommand: 'npm run build', // to compile TypeScript
     });
     const infraPipeline = new CdkPipeline(this, 'InfraPipeline', {
       cloudAssemblyArtifact: cdkOutput,
