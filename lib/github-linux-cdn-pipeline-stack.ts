@@ -36,9 +36,9 @@ export class GithubLinuxCdnPipelineStack extends Stack {
         githubSource,
       ],
     };
-    const cdnPipelineCache = githubLinuxCdnPipelineProps.pipelineCache;
+    const cdnPipelineCache = new Bucket(this, 'CdnPipelineCache');
     const buildCache = Cache.bucket(cdnPipelineCache, {
-      prefix: 'build/'
+      prefix: 'build'
     });
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
@@ -64,7 +64,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
     };
     const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
     const testCache = Cache.bucket(cdnPipelineCache, {
-      prefix: 'test/'
+      prefix: 'test'
     });
     const testProject = new PipelineProject(this, 'TestProject', {
       buildSpec: testSpec,

@@ -108,7 +108,7 @@ export class GithubServerlessPipelineStack extends Stack {
     };
     // ToDo: use variable prefix when already deploying multiple services
     const cdkCache = Cache.bucket(githubServerlessPipelineProps.pipelineCache, {
-      prefix: 'cdk/'
+      prefix: 'cdk'
     });
     const cdkProject = new PipelineProject(this, 'CdkProject', {
       environment: linuxEnv,
