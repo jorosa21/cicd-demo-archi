@@ -35,19 +35,21 @@ export class GithubLinuxCdnPipelineStack extends Stack {
         githubSource,
       ],
     };
+    const cdnPipelineCache = new Bucket(this, 'CdnPipelineCache');
+    const buildCache = Cache.bucket(cdnPipelineCache, {
+      prefix: 'build/'
+    });
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
-    const cacheBucket = new Bucket(this, 'CacheBucket');
-    const cache = Cache.bucket(cacheBucket);
-    const linuxBuildProject = new PipelineProject(this, 'LinuxBuildProject', {
+    const buildProject = new PipelineProject(this, 'BuildProject', {
       environment: linuxEnvironment,
-      cache,
+      cache: buildCache,
     });
     const buildOutput = new Artifact('BuildOutput');
     const linuxBuild = new CodeBuildAction({
       actionName: 'LinuxBuild',
-      project: linuxBuildProject,
+      project: buildProject,
       input: githubOutput,
       outputs: [
         buildOutput,
@@ -60,13 +62,17 @@ export class GithubLinuxCdnPipelineStack extends Stack {
       ],
     };
     const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
-    const linuxTestProject = new PipelineProject(this, 'LinuxTestProject', {
+    const testCache = Cache.bucket(cdnPipelineCache, {
+      prefix: 'test/'
+    });
+    const testProject = new PipelineProject(this, 'TestProject', {
       buildSpec: testSpec,
       environment: linuxEnvironment,
+      cache: testCache,
     });
     const linuxTest = new CodeBuildAction({
       actionName: 'LinuxTest',
-      project: linuxTestProject,
+      project: testProject,
       input: githubOutput,
       type: CodeBuildActionType.TEST,
     });

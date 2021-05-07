@@ -1,6 +1,7 @@
 import { Construct, Stack, StackProps, SecretValue } from '@aws-cdk/core';
+import { Bucket } from '@aws-cdk/aws-s3';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
+import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
 
@@ -11,6 +12,7 @@ export interface GithubServerlessPipelineProps extends StackProps {
   infraGithubTokenName: string,
   infraGithubOwner: string,
   infraGithubRepo: string,
+  pipelineCache: Bucket,
 }
 
 export class GithubServerlessPipelineStack extends Stack {
@@ -78,7 +80,8 @@ export class GithubServerlessPipelineStack extends Stack {
       input: serviceOutput,
     });
     const serviceBaseName = this.node.tryGetContext('serviceBaseName');
-    // ToDo: loop and add suffix when already deploying multiple services
+    // ToDo: get repo name at deploy time rather than build time to produce only 1 cdk stack
+    // ToDo: template name can be common
     const serviceName = serviceBaseName;
     const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
       + ' ' + serviceName;
@@ -87,7 +90,7 @@ export class GithubServerlessPipelineStack extends Stack {
       version: '0.2',
       phases: {
         pre_build: {
-          commands: 'npm ci',
+          commands: 'npm i --prefer-offline --no-audit',
         },
         build: {
           commands: cdkSynthCmd,
@@ -103,9 +106,14 @@ export class GithubServerlessPipelineStack extends Stack {
     const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
+    // ToDo: use variable prefix when already deploying multiple services
+    const cdkCache = Cache.bucket(githubServerlessPipelineProps.pipelineCache, {
+      prefix: 'cdk/'
+    });
     const cdkProject = new PipelineProject(this, 'CdkProject', {
       environment: linuxEnv,
       buildSpec: cdkSpec,
+      cache: cdkCache,
     });
     const cdkOutput = new Artifact('CdkOutput');
     const cdkBuild = new CodeBuildAction({

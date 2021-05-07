@@ -1,4 +1,5 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
+import { Bucket } from '@aws-cdk/aws-s3';
 import { GithubServerlessPipelineStack } from './github-serverless-pipeline-stack';
 import { GithubLinuxCdnPipelineStack } from './github-linux-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
@@ -25,6 +26,8 @@ export class AppDeployStage extends Stage {
       distributionId: site.distributionId,
       env: siteEnv,
     });
+    const servicePipelineCache = new Bucket(this, 'ServicePipelineCache');
+    // ToDo: loop and add suffix when already deploying multiple services
     new GithubServerlessPipelineStack(this, 'ServicePipeline', {
       // ToDo: use context for these instead of hardcoded.
       serviceGithubTokenName: 'github-token',
@@ -33,6 +36,7 @@ export class AppDeployStage extends Stage {
       infraGithubTokenName: 'github-token',
       infraGithubOwner: 'engr-lynx',
       infraGithubRepo: 'cicd-demo',
+      pipelineCache: servicePipelineCache,
     });
   }
 
