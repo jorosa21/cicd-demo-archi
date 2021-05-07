@@ -102,6 +102,11 @@ export class GithubServerlessPipelineStack extends Stack {
           serviceTemplateFilename,
         ],
       },
+      cache: {
+        paths: [
+          'node_modules/**/*',
+        ],
+      },  
     });
     const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
