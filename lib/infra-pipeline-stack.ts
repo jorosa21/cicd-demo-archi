@@ -5,7 +5,7 @@ import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { AppDeployStage } from './app-deploy-stage';
 
-export interface InfraProps extends StackProps {
+export interface InfraPipelineProps extends StackProps {
   githubTokenName: string,
   githubOwner: string,
   githubRepo: string,
@@ -14,21 +14,21 @@ export interface InfraProps extends StackProps {
 /**
  * The stack that defines the infrastructure pipeline
  */
-export class InfraStack extends Stack {
+export class InfraPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, infraProps?: InfraProps) {
-    if (infraProps == null) {
+  constructor(scope: Construct, id: string, infraPipelineProps?: InfraPipelineProps) {
+    if (infraPipelineProps == null) {
       return
     }
-    super(scope, id, infraProps);
+    super(scope, id, infraPipelineProps);
     const githubOutput = new Artifact('GithubOutput');
-    const githubToken = SecretValue.secretsManager(infraProps.githubTokenName);
+    const githubToken = SecretValue.secretsManager(infraPipelineProps.githubTokenName);
     const githubSource = new GitHubSourceAction({
       actionName: 'GithubSource',
       output: githubOutput,
       oauthToken: githubToken,
-      owner: infraProps.githubOwner,
-      repo: infraProps.githubRepo,
+      owner: infraPipelineProps.githubOwner,
+      repo: infraPipelineProps.githubRepo,
     });
     const cdkOutput = new Artifact('CdkOutput');
     const linuxEnvironment = {

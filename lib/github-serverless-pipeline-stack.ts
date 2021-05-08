@@ -6,9 +6,9 @@ import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
 
 export interface GithubServerlessPipelineProps extends StackProps {
-  serviceGithubTokenName: string,
-  serviceGithubOwner: string,
-  serviceGithubRepo: string,
+  appGithubTokenName: string,
+  appGithubOwner: string,
+  appGithubRepo: string,
   infraGithubTokenName: string,
   infraGithubOwner: string,
   infraGithubRepo: string,
@@ -20,13 +20,13 @@ export class GithubServerlessPipelineStack extends Stack {
   constructor(scope: Construct, id: string, githubServerlessPipelineProps: GithubServerlessPipelineProps) {
     super(scope, id, githubServerlessPipelineProps);
     const serviceOutput = new Artifact('ServiceOutput');
-    const serviceToken = SecretValue.secretsManager(githubServerlessPipelineProps.serviceGithubTokenName);
+    const serviceToken = SecretValue.secretsManager(githubServerlessPipelineProps.appGithubTokenName);
     const serviceSource = new GitHubSourceAction({
       actionName: 'ServiceSource',
       output: serviceOutput,
       oauthToken: serviceToken,
-      owner: githubServerlessPipelineProps.serviceGithubOwner,
-      repo: githubServerlessPipelineProps.serviceGithubRepo,
+      owner: githubServerlessPipelineProps.appGithubOwner,
+      repo: githubServerlessPipelineProps.appGithubRepo,
     });
     const infraOutput = new Artifact('InfraOutput');
     const infraToken = SecretValue.secretsManager(githubServerlessPipelineProps.infraGithubTokenName);
@@ -80,7 +80,6 @@ export class GithubServerlessPipelineStack extends Stack {
       input: serviceOutput,
     });
     const serviceBaseName = this.node.tryGetContext('serviceBaseName');
-    // ToDo: get repo name at deploy time rather than build time to produce only 1 cdk stack
     // ToDo: template name can be common
     const serviceName = serviceBaseName;
     const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName

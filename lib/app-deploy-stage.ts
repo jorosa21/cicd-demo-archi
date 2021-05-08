@@ -20,28 +20,27 @@ export class AppDeployStage extends Stage {
     const sitePipelineCache = new PipelineCacheStack(this, 'SitePipelineCache', {
       env: siteEnv,
     });
-    const sitePipelineEnableTestStage = this.node.tryGetContext('SitePipeline:enableTestStage');  
+    const sitePipelineContext = this.node.tryGetContext('SitePipeline');  
     new GithubLinuxCdnPipelineStack(this, 'SitePipeline', {
-      // ToDo: use context for these instead of hardcoded.
-      githubTokenName: 'github-token',
-      githubOwner: 'engr-lynx',
-      githubRepo: 'angular-sample',
+      githubTokenName: sitePipelineContext.githubTokenName,
+      githubOwner: sitePipelineContext.githubOwner,
+      githubRepo: sitePipelineContext.githubRepo,
       distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
       pipelineCache: sitePipelineCache.bucket,
-      enableTestStage: sitePipelineEnableTestStage,
+      enableTestStage: sitePipelineContext.enableTestStage,
       env: siteEnv,
     });
     const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
+    const servicePipelineContext = this.node.tryGetContext('ServicePipeline');  
     // ToDo: loop and add suffix when already deploying multiple services
     new GithubServerlessPipelineStack(this, 'ServicePipeline', {
-      // ToDo: use context for these instead of hardcoded.
-      serviceGithubTokenName: 'github-token',
-      serviceGithubOwner: 'engr-lynx',
-      serviceGithubRepo: 'net-sample',
-      infraGithubTokenName: 'github-token',
-      infraGithubOwner: 'engr-lynx',
-      infraGithubRepo: 'cicd-demo',
+      appGithubTokenName: servicePipelineContext.appGithubTokenName,
+      appGithubOwner: servicePipelineContext.appGithubOwner,
+      appGithubRepo: servicePipelineContext.appGithubRepo,
+      infraGithubTokenName: servicePipelineContext.infraGithubTokenName,
+      infraGithubOwner: servicePipelineContext.infraGithubOwner,
+      infraGithubRepo: servicePipelineContext.infraGithubRepo,
       pipelineCache: servicePipelineCache.bucket,
     });
   }

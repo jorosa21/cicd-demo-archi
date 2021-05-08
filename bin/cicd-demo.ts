@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import { App } from '@aws-cdk/core';
-import { InfraStack } from '../lib/infra-stack';
+import { InfraPipelineStack } from '../lib/infra-pipeline-stack';
 import { ServerlessStack } from '../lib/serverless-stack';
 
 const serviceBaseName = 'Service';
@@ -16,11 +16,12 @@ const appEnv = {
   region: process.env.CDK_DEFAULT_REGION,
   account: process.env.CDK_DEFAULT_ACCOUNT,
 };
-// ToDo: use context for these instead of hardcoded.
-new InfraStack(app, 'Infra', {
-  githubTokenName: 'github-token',
-  githubOwner: 'engr-lynx',
-  githubRepo: 'cicd-demo',
+const infraPipelineId = app.node.tryGetContext('infraPipelineId');  
+const infraPipelineContext = app.node.tryGetContext('InfraPipeline');  
+new InfraPipelineStack(app, infraPipelineId, {
+  githubTokenName: infraPipelineContext.githubTokenName,
+  githubOwner: infraPipelineContext.githubOwner,
+  githubRepo: infraPipelineContext.githubRepo,
   env: appEnv,
 });
 // ToDo: loop and add suffix when already deploying multiple services
