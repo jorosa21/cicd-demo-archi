@@ -17,6 +17,6 @@
     "appGithubRepo": "net-sample",
     "infraGithubTokenName": "github-token",
     "infraGithubOwner": "engr-lynx",
-    "infraGithubRepo": "cicd-demo"
+    "infraGithubRepo": "serverless-demo"
   }
 }

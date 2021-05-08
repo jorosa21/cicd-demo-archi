@@ -79,12 +79,10 @@ export class GithubServerlessPipelineStack extends Stack {
       project: dockerProject,
       input: serviceOutput,
     });
-    const serviceBaseName = this.node.tryGetContext('serviceBaseName');
-    // ToDo: template name can be common
-    const serviceName = serviceBaseName;
+    const serverlessId = 'serverless';
     const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
-      + ' ' + serviceName;
-    const serviceTemplateFilename = serviceName + '.template.json';
+      + ' -c serverlessId=' + serverlessId;
+    const serviceTemplateFilename = serverlessId + '.template.json';
     const cdkSpec = BuildSpec.fromObject({
       version: '0.2',
       phases: {
@@ -138,8 +136,8 @@ export class GithubServerlessPipelineStack extends Stack {
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
-      // ToDo: use variable serviceName when already deploying multiple services
-      stackName: serviceName,
+      // ToDo: use variable stackName when already deploying multiple services
+      stackName: serverlessId,
       templatePath: lambdaTemplate,
       adminPermissions: true,
     });

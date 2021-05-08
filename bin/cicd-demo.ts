@@ -2,15 +2,8 @@
 import 'source-map-support/register';
 import { App } from '@aws-cdk/core';
 import { InfraPipelineStack } from '../lib/infra-pipeline-stack';
-import { ServerlessStack } from '../lib/serverless-stack';
 
-const serviceBaseName = 'Service';
-const appContext = {
-  serviceBaseName,
-}
-const app = new App({
-  context: appContext,
-});
+const app = new App();
 // cross-region deployment so the environment need to be explicit
 const appEnv = {
   region: process.env.CDK_DEFAULT_REGION,
@@ -24,7 +17,4 @@ new InfraPipelineStack(app, infraPipelineId, {
   githubRepo: infraPipelineContext.githubRepo,
   env: appEnv,
 });
-// ToDo: loop and add suffix when already deploying multiple services
-const serviceName = serviceBaseName;
-new ServerlessStack(app, serviceName);
 app.synth();
