@@ -1,11 +1,20 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { PipelineCacheStack } from './pipeline-cache-stack';
-import { GithubServerlessPipelineStack } from './github-serverless-pipeline-stack';
+import { GithubServerlessPipelineStack, GithubServerlessPipelineProps } from './github-serverless-pipeline-stack';
 import { GithubLinuxCdnPipelineStack } from './github-linux-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
 
+type ServicePipelineContext = Pick<GithubServerlessPipelineProps,
+  'appGithubTokenName' |
+  'appGithubOwner' |
+  'appGithubRepo' |
+  'infraGithubTokenName' |
+  'infraGithubOwner' |
+  'infraGithubRepo'
+>;
+
 /**
- * Deployable unit of Angular site
+ * Deployable unit of entire app
  */
 export class AppDeployStage extends Stage {
 
@@ -32,16 +41,19 @@ export class AppDeployStage extends Stage {
       env: siteEnv,
     });
     const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
-    const servicePipelineContext = this.node.tryGetContext('ServicePipeline');  
-    // ToDo: loop and add suffix when already deploying multiple services
-    new GithubServerlessPipelineStack(this, 'ServicePipeline', {
-      appGithubTokenName: servicePipelineContext.appGithubTokenName,
-      appGithubOwner: servicePipelineContext.appGithubOwner,
-      appGithubRepo: servicePipelineContext.appGithubRepo,
-      infraGithubTokenName: servicePipelineContext.infraGithubTokenName,
-      infraGithubOwner: servicePipelineContext.infraGithubOwner,
-      infraGithubRepo: servicePipelineContext.infraGithubRepo,
-      pipelineCache: servicePipelineCache.bucket,
+    const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
+    Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
+      const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext]
+      new GithubServerlessPipelineStack(this, serviceId + 'Pipeline', {
+        serviceId,
+        appGithubTokenName: servicePipelineContext.appGithubTokenName,
+        appGithubOwner: servicePipelineContext.appGithubOwner,
+        appGithubRepo: servicePipelineContext.appGithubRepo,
+        infraGithubTokenName: servicePipelineContext.infraGithubTokenName,
+        infraGithubOwner: servicePipelineContext.infraGithubOwner,
+        infraGithubRepo: servicePipelineContext.infraGithubRepo,
+        pipelineCache: servicePipelineCache.bucket,
+      });
     });
   }
 

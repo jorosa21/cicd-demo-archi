@@ -6,6 +6,7 @@ import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
 
 export interface GithubServerlessPipelineProps extends StackProps {
+  serviceId: string,
   appGithubTokenName: string,
   appGithubOwner: string,
   appGithubRepo: string,
@@ -79,7 +80,7 @@ export class GithubServerlessPipelineStack extends Stack {
       project: dockerProject,
       input: serviceOutput,
     });
-    const serverlessId = 'serverless';
+    const serverlessId = 'Serverless';
     const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
       + ' -c serverlessId=' + serverlessId;
     const serviceTemplateFilename = serverlessId + '.template.json';
@@ -108,9 +109,8 @@ export class GithubServerlessPipelineStack extends Stack {
     const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
-    // ToDo: use variable prefix when already deploying multiple services
     const cdkCache = Cache.bucket(githubServerlessPipelineProps.pipelineCache, {
-      prefix: 'cdk'
+      prefix: githubServerlessPipelineProps.serviceId,
     });
     const cdkProject = new PipelineProject(this, 'CdkProject', {
       environment: linuxEnv,
@@ -136,8 +136,7 @@ export class GithubServerlessPipelineStack extends Stack {
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
-      // ToDo: use variable stackName when already deploying multiple services
-      stackName: serverlessId,
+      stackName: githubServerlessPipelineProps.serviceId,
       templatePath: lambdaTemplate,
       adminPermissions: true,
     });

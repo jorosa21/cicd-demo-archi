@@ -11,12 +11,22 @@
     "githubRepo": "angular-sample",
     "enableTestStage": true
   },
-  "ServicePipeline": {
-    "appGithubTokenName": "github-token",
-    "appGithubOwner": "engr-lynx",
-    "appGithubRepo": "net-sample",
-    "infraGithubTokenName": "github-token",
-    "infraGithubOwner": "engr-lynx",
-    "infraGithubRepo": "serverless-demo"
+  "ServicePipelines": {
+    "Service1": {
+      "appGithubTokenName": "github-token",
+      "appGithubOwner": "engr-lynx",
+      "appGithubRepo": "net-sample",
+      "infraGithubTokenName": "github-token",
+      "infraGithubOwner": "engr-lynx",
+      "infraGithubRepo": "serverless-demo"
+    },
+    "Service2": {
+      "appGithubTokenName": "github-token",
+      "appGithubOwner": "engr-lynx",
+      "appGithubRepo": "net-sample",
+      "infraGithubTokenName": "github-token",
+      "infraGithubOwner": "engr-lynx",
+      "infraGithubRepo": "serverless-demo"
+    }
   }
 }
