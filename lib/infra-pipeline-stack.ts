@@ -1,14 +1,12 @@
 import { Artifact } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction } from '@aws-cdk/aws-codepipeline-actions';
 import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
-import { Construct, SecretValue, Stack, StackProps } from '@aws-cdk/core';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { AppDeployStage } from './app-deploy-stage';
+import { GithubProps, CodeCommitProps, buildRepoSourceAction } from './pipeline-helper';
 
 export interface InfraPipelineProps extends StackProps {
-  githubTokenName: string,
-  githubOwner: string,
-  githubRepo: string,
+  repoProps: GithubProps | CodeCommitProps,
 }
 
 /**
@@ -21,27 +19,20 @@ export class InfraPipelineStack extends Stack {
       return
     }
     super(scope, id, infraPipelineProps);
-    const githubOutput = new Artifact('GithubOutput');
-    const githubToken = SecretValue.secretsManager(infraPipelineProps.githubTokenName);
-    const githubSource = new GitHubSourceAction({
-      actionName: 'GithubSource',
-      output: githubOutput,
-      oauthToken: githubToken,
-      owner: infraPipelineProps.githubOwner,
-      repo: infraPipelineProps.githubRepo,
-    });
+    const gitOutput = new Artifact('GitOutput');
+    const gitSource = buildRepoSourceAction(this, infraPipelineProps.repoProps, gitOutput, false);
     const cdkOutput = new Artifact('CdkOutput');
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
     const cdkSynth = SimpleSynthAction.standardNpmSynth({
-      sourceArtifact: githubOutput,
+      sourceArtifact: gitOutput,
       cloudAssemblyArtifact: cdkOutput,
       environment: linuxEnvironment,
     });
     const infraPipeline = new CdkPipeline(this, 'InfraPipeline', {
       cloudAssemblyArtifact: cdkOutput,
-      sourceAction: githubSource,
+      sourceAction: gitSource,
       synthAction: cdkSynth,
     });
     // This is where we add the application stages

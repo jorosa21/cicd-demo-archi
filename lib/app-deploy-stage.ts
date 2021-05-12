@@ -1,7 +1,7 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { PipelineCacheStack } from './pipeline-cache-stack';
 import { GithubServerlessPipelineStack, GithubServerlessPipelineProps } from './github-serverless-pipeline-stack';
-import { GithubLinuxCdnPipelineStack } from './github-linux-cdn-pipeline-stack';
+import { GithubLinuxCdnPipelineStack, GithubProps, CodeCommitProps } from './github-linux-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
 
 type ServicePipelineContext = Pick<GithubServerlessPipelineProps,
@@ -29,11 +29,21 @@ export class AppDeployStage extends Stage {
     const sitePipelineCache = new PipelineCacheStack(this, 'SitePipelineCache', {
       env: siteEnv,
     });
-    const sitePipelineContext = this.node.tryGetContext('SitePipeline');  
+    const sitePipelineContext = this.node.tryGetContext('SitePipeline');
+    let repoProps: GithubProps | CodeCommitProps;
+    if (sitePipelineContext.codeCommitRepoName !== undefined) {
+      repoProps = {
+        codeCommitRepoName: sitePipelineContext.codeCommitRepoName,
+      };
+    } else {
+      repoProps = {
+        githubTokenName: sitePipelineContext.githubTokenName,
+        githubOwner: sitePipelineContext.githubOwner,
+        githubRepoName: sitePipelineContext.githubRepoName,
+      };
+    };    
     new GithubLinuxCdnPipelineStack(this, 'SitePipeline', {
-      githubTokenName: sitePipelineContext.githubTokenName,
-      githubOwner: sitePipelineContext.githubOwner,
-      githubRepo: sitePipelineContext.githubRepo,
+      repoProps,
       distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
       pipelineCache: sitePipelineCache.bucket,

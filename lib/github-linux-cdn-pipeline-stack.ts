@@ -5,13 +5,13 @@ import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
+import { Action, GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
+import { Repository } from '@aws-cdk/aws-codecommit';
 import { RetentionDays } from '@aws-cdk/aws-logs';
+import { GithubProps, CodeCommitProps, buildRepoSourceAction } from './pipeline-helper';
 
 export interface GithubLinuxCdnPipelineProps extends StackProps {
-  githubTokenName: string,
-  githubOwner: string,
-  githubRepo: string,
+  repoProps: GithubProps | CodeCommitProps,
   distributionSource: Bucket,
   distributionId: string,
   pipelineCache: Bucket,
@@ -23,19 +23,12 @@ export class GithubLinuxCdnPipelineStack extends Stack {
   constructor(scope: Construct, id: string, githubLinuxCdnPipelineProps: GithubLinuxCdnPipelineProps) {
     super(scope, id, githubLinuxCdnPipelineProps);
     const pipelineStages = []
-    const githubOutput = new Artifact('GithubOutput');
-    const githubToken = SecretValue.secretsManager(githubLinuxCdnPipelineProps.githubTokenName);
-    const githubSource = new GitHubSourceAction({
-      actionName: 'GithubSource',
-      output: githubOutput,
-      oauthToken: githubToken,
-      owner: githubLinuxCdnPipelineProps.githubOwner,
-      repo: githubLinuxCdnPipelineProps.githubRepo,
-    });
+    const gitOutput = new Artifact('GitOutput');
+    const gitSource = buildRepoSourceAction(this, githubLinuxCdnPipelineProps.repoProps, gitOutput, true);
     const sourceStage = {
       stageName: 'Source',
       actions: [
-        githubSource,
+        gitSource,
       ],
     };
     pipelineStages.push(sourceStage);
@@ -54,7 +47,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
     const linuxBuild = new CodeBuildAction({
       actionName: 'LinuxBuild',
       project: buildProject,
-      input: githubOutput,
+      input: gitOutput,
       outputs: [
         buildOutput,
       ],
@@ -79,7 +72,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
       const linuxTest = new CodeBuildAction({
         actionName: 'LinuxTest',
         project: testProject,
-        input: githubOutput,
+        input: gitOutput,
         type: CodeBuildActionType.TEST,
       });
       const testStage = {

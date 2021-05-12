@@ -1,15 +1,11 @@
 {
-  "infraPipelineId": "Infra",
+  "infraPipelineId": "CicdDemoInfraPipeline",
   "InfraPipeline": {
-    "githubTokenName": "github-token",
-    "githubOwner": "engr-lynx",
-    "githubRepo": "cicd-demo"
+    "codeCommitRepoName": "cicd-demo-infra"
   },
   "SitePipeline": {
-    "githubTokenName": "github-token",
-    "githubOwner": "engr-lynx",
-    "githubRepo": "angular-sample",
-    "enableTestStage": true
+    "codeCommitRepoName": "angular-sample",
+    "enableTestStage": false
   },
   "ServicePipelines": {
     "Service1": {

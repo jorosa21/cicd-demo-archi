@@ -4,6 +4,7 @@ import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
+import { GithubProps, CodeCommitProps, buildRepoSourceAction } from './pipeline-helper';
 
 export interface GithubServerlessPipelineProps extends StackProps {
   serviceId: string,
