@@ -43,12 +43,13 @@ export function buildRepoProps (context: Context) {
 export function buildGitSourceAction (scope: Construct, gitSourceActionProps: GitSourceActionProps) {
   const actionName = (gitSourceActionProps.namePrefix ?? '') + 'GitSource';
   if ((<CodeCommitProps>gitSourceActionProps.repoProps).codeCommitRepoName !== undefined) {
+    const repoId = scope.node.id + (gitSourceActionProps.namePrefix ?? '') + 'Repo';
     const codeCommitProps = gitSourceActionProps.repoProps as CodeCommitProps;
     let infraRepo: IRepository;
     if (gitSourceActionProps.createRepo) {
-      infraRepo = Repository.fromRepositoryName(scope, 'InfraRepo', codeCommitProps.codeCommitRepoName);
+      infraRepo = Repository.fromRepositoryName(scope, repoId, codeCommitProps.codeCommitRepoName);
     } else {
-      infraRepo = new Repository(scope, 'InfraRepo', {
+      infraRepo = new Repository(scope, repoId, {
         repositoryName: codeCommitProps.codeCommitRepoName,
       });  
     }
