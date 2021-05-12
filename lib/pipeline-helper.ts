@@ -47,11 +47,11 @@ export function buildGitSourceAction (scope: Construct, gitSourceActionProps: Gi
     const codeCommitProps = gitSourceActionProps.repoProps as CodeCommitProps;
     let infraRepo: IRepository;
     if (gitSourceActionProps.createRepo) {
-      infraRepo = Repository.fromRepositoryName(scope, repoId, codeCommitProps.codeCommitRepoName);
-    } else {
       infraRepo = new Repository(scope, repoId, {
         repositoryName: codeCommitProps.codeCommitRepoName,
       });  
+    } else {
+      infraRepo = Repository.fromRepositoryName(scope, repoId, codeCommitProps.codeCommitRepoName);
     }
     return new CodeCommitSourceAction({
       actionName,
