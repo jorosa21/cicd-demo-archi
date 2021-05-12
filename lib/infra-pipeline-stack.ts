@@ -3,10 +3,10 @@ import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { AppDeployStage } from './app-deploy-stage';
-import { GithubProps, CodeCommitProps, buildRepoSourceAction } from './pipeline-helper';
+import { RepoProps, buildGitSourceAction } from './pipeline-helper';
 
 export interface InfraPipelineProps extends StackProps {
-  repoProps: GithubProps | CodeCommitProps,
+  repoProps: RepoProps,
 }
 
 /**
@@ -20,7 +20,11 @@ export class InfraPipelineStack extends Stack {
     }
     super(scope, id, infraPipelineProps);
     const gitOutput = new Artifact('GitOutput');
-    const gitSource = buildRepoSourceAction(this, infraPipelineProps.repoProps, gitOutput, false);
+    const gitSource = buildGitSourceAction(this, {
+      repoProps: infraPipelineProps.repoProps,
+      repoOutput: gitOutput,
+      createRepo: false,
+    });
     const cdkOutput = new Artifact('CdkOutput');
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,

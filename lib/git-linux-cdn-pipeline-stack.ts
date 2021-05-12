@@ -1,30 +1,33 @@
 import { join } from 'path';
-import { Construct, Stack, StackProps, SecretValue, Arn, Duration } from '@aws-cdk/core';
+import { Construct, Stack, StackProps, Arn, Duration } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
 import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { Action, GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { Repository } from '@aws-cdk/aws-codecommit';
+import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
-import { GithubProps, CodeCommitProps, buildRepoSourceAction } from './pipeline-helper';
+import { RepoProps, buildGitSourceAction } from './pipeline-helper';
 
-export interface GithubLinuxCdnPipelineProps extends StackProps {
-  repoProps: GithubProps | CodeCommitProps,
+export interface GitLinuxCdnPipelineProps extends StackProps {
+  repoProps: RepoProps,
   distributionSource: Bucket,
   distributionId: string,
   pipelineCache: Bucket,
   enableTestStage: boolean,
 }
 
-export class GithubLinuxCdnPipelineStack extends Stack {
+export class GitLinuxCdnPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, githubLinuxCdnPipelineProps: GithubLinuxCdnPipelineProps) {
-    super(scope, id, githubLinuxCdnPipelineProps);
+  constructor(scope: Construct, id: string, gitLinuxCdnPipelineProps: GitLinuxCdnPipelineProps) {
+    super(scope, id, gitLinuxCdnPipelineProps);
     const pipelineStages = []
     const gitOutput = new Artifact('GitOutput');
-    const gitSource = buildRepoSourceAction(this, githubLinuxCdnPipelineProps.repoProps, gitOutput, true);
+    const gitSource = buildGitSourceAction(this, {
+      repoProps: gitLinuxCdnPipelineProps.repoProps,
+      repoOutput: gitOutput,
+      createRepo: true,
+    });
     const sourceStage = {
       stageName: 'Source',
       actions: [
@@ -59,7 +62,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(buildStage);
-    if (githubLinuxCdnPipelineProps.enableTestStage) {
+    if (gitLinuxCdnPipelineProps.enableTestStage) {
       const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
       const testCache = Cache.bucket(cdnPipelineCache, {
         prefix: 'test'
@@ -86,7 +89,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
     const s3Deploy = new S3DeployAction({
       actionName: 'S3Deploy',
       input: buildOutput,
-      bucket: githubLinuxCdnPipelineProps.distributionSource,
+      bucket: gitLinuxCdnPipelineProps.distributionSource,
     });
     const deployStage = {
       stageName: 'Deploy',
@@ -99,7 +102,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
       service: 'cloudfront',
       resource: 'distribution',
       region: '',
-      resourceName: githubLinuxCdnPipelineProps.distributionId,
+      resourceName: gitLinuxCdnPipelineProps.distributionId,
     }, this);
     const distributionPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
@@ -122,7 +125,7 @@ export class GithubLinuxCdnPipelineStack extends Stack {
       ],
     });
     const distributionProps = {
-      distributionId: githubLinuxCdnPipelineProps.distributionId,
+      distributionId: gitLinuxCdnPipelineProps.distributionId,
     };
     const cacheInvalidate = new LambdaInvokeAction({
       actionName: 'CacheInvalidate',
@@ -136,8 +139,9 @@ export class GithubLinuxCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(invalidateStage);
-    new Pipeline(this, 'GithubLinuxCdnPipeline', {
+    new Pipeline(this, 'GitLinuxCdnPipeline', {
       stages: pipelineStages,
+      restartExecutionOnUpdate: false,
     });
   }
 

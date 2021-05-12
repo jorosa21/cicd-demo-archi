@@ -3,46 +3,38 @@ import { Bucket } from '@aws-cdk/aws-s3';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
-import { GithubProps, CodeCommitProps, buildRepoSourceAction } from './pipeline-helper';
+import { CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
+import { RepoProps, buildGitSourceAction } from './pipeline-helper';
 
-export interface GithubServerlessPipelineProps extends StackProps {
+export interface GitServerlessPipelineProps extends StackProps {
   serviceId: string,
-  appGithubTokenName: string,
-  appGithubOwner: string,
-  appGithubRepo: string,
-  infraGithubTokenName: string,
-  infraGithubOwner: string,
-  infraGithubRepo: string,
+  appRepoProps: RepoProps,
+  infraRepoProps: RepoProps,
   pipelineCache: Bucket,
 }
 
-export class GithubServerlessPipelineStack extends Stack {
+export class GitServerlessPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, githubServerlessPipelineProps: GithubServerlessPipelineProps) {
-    super(scope, id, githubServerlessPipelineProps);
-    const serviceOutput = new Artifact('ServiceOutput');
-    const serviceToken = SecretValue.secretsManager(githubServerlessPipelineProps.appGithubTokenName);
-    const serviceSource = new GitHubSourceAction({
-      actionName: 'ServiceSource',
-      output: serviceOutput,
-      oauthToken: serviceToken,
-      owner: githubServerlessPipelineProps.appGithubOwner,
-      repo: githubServerlessPipelineProps.appGithubRepo,
+  constructor(scope: Construct, id: string, gitServerlessPipelineProps: GitServerlessPipelineProps) {
+    super(scope, id, gitServerlessPipelineProps);
+    const appOutput = new Artifact('AppOutput');
+    const appSource = buildGitSourceAction(this, {
+      repoProps: gitServerlessPipelineProps.appRepoProps,
+      namePrefix: 'App',
+      repoOutput: appOutput,
+      createRepo: true,
     });
     const infraOutput = new Artifact('InfraOutput');
-    const infraToken = SecretValue.secretsManager(githubServerlessPipelineProps.infraGithubTokenName);
-    const infraSource = new GitHubSourceAction({
-      actionName: 'InfraSource',
-      output: infraOutput,
-      oauthToken: infraToken,
-      owner: githubServerlessPipelineProps.infraGithubOwner,
-      repo: githubServerlessPipelineProps.infraGithubRepo,
+    const infraSource = buildGitSourceAction(this, {
+      repoProps: gitServerlessPipelineProps.infraRepoProps,
+      namePrefix: 'Infra',
+      repoOutput: infraOutput,
+      createRepo: false,
     });
     const sourceStage = {
       stageName: 'Source',
       actions: [
-        serviceSource,
+        appSource,
         infraSource,
       ],
     };
@@ -79,7 +71,7 @@ export class GithubServerlessPipelineStack extends Stack {
     const dockerBuild = new CodeBuildAction({
       actionName: 'DockerBuild',
       project: dockerProject,
-      input: serviceOutput,
+      input: appOutput,
     });
     const serverlessId = 'Serverless';
     const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
@@ -110,8 +102,8 @@ export class GithubServerlessPipelineStack extends Stack {
     const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
-    const cdkCache = Cache.bucket(githubServerlessPipelineProps.pipelineCache, {
-      prefix: githubServerlessPipelineProps.serviceId,
+    const cdkCache = Cache.bucket(gitServerlessPipelineProps.pipelineCache, {
+      prefix: gitServerlessPipelineProps.serviceId,
     });
     const cdkProject = new PipelineProject(this, 'CdkProject', {
       environment: linuxEnv,
@@ -137,7 +129,7 @@ export class GithubServerlessPipelineStack extends Stack {
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
-      stackName: githubServerlessPipelineProps.serviceId,
+      stackName: gitServerlessPipelineProps.serviceId,
       templatePath: lambdaTemplate,
       adminPermissions: true,
     });
@@ -147,12 +139,13 @@ export class GithubServerlessPipelineStack extends Stack {
         lambdaDeploy,
       ],
     };
-    new Pipeline(this, 'GithubServerlessPipeline', {
+    new Pipeline(this, 'GitServerlessPipeline', {
       stages: [
         sourceStage,
         buildStage,
         deployStage,
       ],
+      restartExecutionOnUpdate: false,
     });
   }
 

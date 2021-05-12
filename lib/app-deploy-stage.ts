@@ -1,17 +1,15 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { PipelineCacheStack } from './pipeline-cache-stack';
-import { GithubServerlessPipelineStack, GithubServerlessPipelineProps } from './github-serverless-pipeline-stack';
-import { GithubLinuxCdnPipelineStack, GithubProps, CodeCommitProps } from './github-linux-cdn-pipeline-stack';
+import { GitServerlessPipelineStack } from './git-serverless-pipeline-stack';
+import { GitLinuxCdnPipelineStack } from './git-linux-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
+import { Context, buildRepoProps } from './pipeline-helper';
 
-type ServicePipelineContext = Pick<GithubServerlessPipelineProps,
-  'appGithubTokenName' |
-  'appGithubOwner' |
-  'appGithubRepo' |
-  'infraGithubTokenName' |
-  'infraGithubOwner' |
-  'infraGithubRepo'
->;
+
+interface ServicePipelineContext {
+  app: Context,
+  infra: Context,
+}
 
 /**
  * Deployable unit of entire app
@@ -30,20 +28,9 @@ export class AppDeployStage extends Stage {
       env: siteEnv,
     });
     const sitePipelineContext = this.node.tryGetContext('SitePipeline');
-    let repoProps: GithubProps | CodeCommitProps;
-    if (sitePipelineContext.codeCommitRepoName !== undefined) {
-      repoProps = {
-        codeCommitRepoName: sitePipelineContext.codeCommitRepoName,
-      };
-    } else {
-      repoProps = {
-        githubTokenName: sitePipelineContext.githubTokenName,
-        githubOwner: sitePipelineContext.githubOwner,
-        githubRepoName: sitePipelineContext.githubRepoName,
-      };
-    };    
-    new GithubLinuxCdnPipelineStack(this, 'SitePipeline', {
-      repoProps,
+    const siteRepoProps = buildRepoProps(sitePipelineContext);
+    new GitLinuxCdnPipelineStack(this, 'SitePipeline', {
+      repoProps: siteRepoProps,
       distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
       pipelineCache: sitePipelineCache.bucket,
@@ -53,18 +40,17 @@ export class AppDeployStage extends Stage {
     const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
     const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
     Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
-      const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext]
-      new GithubServerlessPipelineStack(this, serviceId + 'Pipeline', {
+      const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext];
+      const appRepoProps = buildRepoProps(servicePipelineContext.app);
+      const infraRepoProps = buildRepoProps(servicePipelineContext.infra);
+      new GitServerlessPipelineStack(this, serviceId + 'Pipeline', {
         serviceId,
-        appGithubTokenName: servicePipelineContext.appGithubTokenName,
-        appGithubOwner: servicePipelineContext.appGithubOwner,
-        appGithubRepo: servicePipelineContext.appGithubRepo,
-        infraGithubTokenName: servicePipelineContext.infraGithubTokenName,
-        infraGithubOwner: servicePipelineContext.infraGithubOwner,
-        infraGithubRepo: servicePipelineContext.infraGithubRepo,
+        appRepoProps,
+        infraRepoProps,
         pipelineCache: servicePipelineCache.bucket,
       });
     });
   }
 
 }
+

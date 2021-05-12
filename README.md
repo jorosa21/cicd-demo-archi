@@ -7,3 +7,4 @@
  1.  Clone this project.
  1.  Modify `cdk.context.json` as per your application.
  1.  Run `cdk deploy <infraPipelineId>`.
+ 1.  Push codes to the repos specified in the context file.
