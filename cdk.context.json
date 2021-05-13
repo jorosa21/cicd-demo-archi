@@ -10,7 +10,7 @@
   "ServicePipelines": {
     "Service1": {
       "app": {
-        "codeCommitRepoName": "net-sample"
+        "codeCommitRepoName": "net-sample1"
       },
       "infra": {
         "codeCommitRepoName": "serverless-demo"
@@ -18,7 +18,7 @@
     },
     "Service2": {
       "app": {
-        "codeCommitRepoName": "net-sample"
+        "codeCommitRepoName": "net-sample2"
       },
       "infra": {
         "codeCommitRepoName": "serverless-demo"
