@@ -1,4 +1,4 @@
-import { Construct, Stack, StackProps, SecretValue } from '@aws-cdk/core';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
@@ -17,19 +17,18 @@ export class GitServerlessPipelineStack extends Stack {
 
   constructor(scope: Construct, id: string, gitServerlessPipelineProps: GitServerlessPipelineProps) {
     super(scope, id, gitServerlessPipelineProps);
+    const pipelineStages = [];
     const appOutput = new Artifact('AppOutput');
     const appSource = buildGitSourceAction(this, {
       repoProps: gitServerlessPipelineProps.appRepoProps,
       namePrefix: 'App',
       repoOutput: appOutput,
-      createRepo: true,
     });
     const infraOutput = new Artifact('InfraOutput');
     const infraSource = buildGitSourceAction(this, {
       repoProps: gitServerlessPipelineProps.infraRepoProps,
       namePrefix: 'Infra',
       repoOutput: infraOutput,
-      createRepo: false,
     });
     const sourceStage = {
       stageName: 'Source',
@@ -38,6 +37,7 @@ export class GitServerlessPipelineStack extends Stack {
         infraSource,
       ],
     };
+    pipelineStages.push(sourceStage);
     const dockerRepository = new Repository(this, 'DockerRepository');
     const registry = dockerRepository.repositoryUri.split('/', 1)[0];
     const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin ' + registry;
@@ -74,14 +74,14 @@ export class GitServerlessPipelineStack extends Stack {
       input: appOutput,
     });
     const serverlessId = 'Serverless';
-    const cdkSynthCmd = 'npm run cdk synth -- -c imageRepoName=' + dockerRepository.repositoryName
+    const cdkSynthCmd = 'npx cdk synth -c imageRepoName=' + dockerRepository.repositoryName
       + ' -c serverlessId=' + serverlessId;
     const serviceTemplateFilename = serverlessId + '.template.json';
     const cdkSpec = BuildSpec.fromObject({
       version: '0.2',
       phases: {
         pre_build: {
-          commands: 'npm i --prefer-offline --no-audit',
+          commands: 'yarn install',
         },
         build: {
           commands: cdkSynthCmd,
@@ -126,6 +126,11 @@ export class GitServerlessPipelineStack extends Stack {
         cdkBuild,
       ],
     };
+    /* Todo:
+     * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test, approval
+     * config - filenames of spec files (enabled if specified); priveleged (+build)
+     */
+    pipelineStages.push(buildStage);
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
@@ -139,12 +144,9 @@ export class GitServerlessPipelineStack extends Stack {
         lambdaDeploy,
       ],
     };
+    pipelineStages.push(deployStage);
     new Pipeline(this, 'GitServerlessPipeline', {
-      stages: [
-        sourceStage,
-        buildStage,
-        deployStage,
-      ],
+      stages: pipelineStages,
       restartExecutionOnUpdate: false,
     });
   }

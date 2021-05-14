@@ -21,12 +21,11 @@ export class GitLinuxCdnPipelineStack extends Stack {
 
   constructor(scope: Construct, id: string, gitLinuxCdnPipelineProps: GitLinuxCdnPipelineProps) {
     super(scope, id, gitLinuxCdnPipelineProps);
-    const pipelineStages = []
+    const pipelineStages = [];
     const gitOutput = new Artifact('GitOutput');
     const gitSource = buildGitSourceAction(this, {
       repoProps: gitLinuxCdnPipelineProps.repoProps,
       repoOutput: gitOutput,
-      createRepo: true,
     });
     const sourceStage = {
       stageName: 'Source',
@@ -62,6 +61,10 @@ export class GitLinuxCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(buildStage);
+    /* Todo:
+     * optional stages (in order from build) - staging (2 buckets & existingBucketObj), test, approval
+     * config - filenames of spec files (enabled if specified); priveleged (+build)
+     */
     if (gitLinuxCdnPipelineProps.enableTestStage) {
       const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
       const testCache = Cache.bucket(cdnPipelineCache, {

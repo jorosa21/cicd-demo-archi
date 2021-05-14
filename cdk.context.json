@@ -1,27 +1,34 @@
 {
   "infraPipelineId": "CicdDemoInfraPipeline",
   "InfraPipeline": {
-    "codeCommitRepoName": "cicd-demo-infra"
+    "codeCommitRepoName": "cicd-demo-infra",
+    "codeCommitCreate": true
   },
   "SitePipeline": {
     "codeCommitRepoName": "angular-sample",
-    "enableTestStage": false
+    "codeCommitCreate": true,
+    "enableTestStage": true,
+    "testSpecFilename": "testspec.yml"
   },
   "ServicePipelines": {
     "Service1": {
       "app": {
-        "codeCommitRepoName": "net-sample1"
+        "codeCommitRepoName": "net-sample1",
+        "codeCommitCreate": true
       },
       "infra": {
-        "codeCommitRepoName": "serverless-demo"
+        "codeCommitRepoName": "serverless-demo",
+        "codeCommitCreate": true
       }
     },
     "Service2": {
       "app": {
-        "codeCommitRepoName": "net-sample2"
+        "codeCommitRepoName": "net-sample2",
+        "codeCommitCreate": true
       },
       "infra": {
-        "codeCommitRepoName": "serverless-demo"
+        "codeCommitRepoName": "serverless-demo",
+        "codeCommitCreate": false
       }
     }
   }
