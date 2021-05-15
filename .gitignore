@@ -7,6 +7,14 @@ node_modules
 .cdk.staging
 cdk.out
 
-# environment
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# System Files
 .DS_Store
-.vscode
+Thumbs.db

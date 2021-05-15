@@ -42,13 +42,17 @@ export class RepoSlsPipelineStack extends Stack {
     const registry = dockerRepository.repositoryUri.split('/', 1)[0];
     const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin ' + registry;
     const dockerTag = dockerRepository.repositoryUri;
+    const dockerPullCmd = 'docker pull ' + dockerTag;
     const dockerBuildCmd = 'docker build -t ' + dockerTag + ' .';
     const dockerPushCmd = 'docker push ' + dockerTag;
     const dockerSpec = BuildSpec.fromObject({
       version: '0.2',
       phases: {
         pre_build: {
-          commands: dockerLoginCmd,
+          commands: [
+            dockerLoginCmd,
+            dockerPullCmd,
+          ],
         },
         build: {
           commands: dockerBuildCmd,
