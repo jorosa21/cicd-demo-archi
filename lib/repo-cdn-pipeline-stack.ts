@@ -7,9 +7,9 @@ import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
-import { RepoProps, buildGitSourceAction } from './pipeline-helper';
+import { RepoProps, buildRepoSourceAction } from './pipeline-helper';
 
-export interface GitLinuxCdnPipelineProps extends StackProps {
+export interface RepoCdnPipelineProps extends StackProps {
   repoProps: RepoProps,
   distributionSource: Bucket,
   distributionId: string,
@@ -17,20 +17,20 @@ export interface GitLinuxCdnPipelineProps extends StackProps {
   enableTestStage: boolean,
 }
 
-export class GitLinuxCdnPipelineStack extends Stack {
+export class RepoCdnPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, gitLinuxCdnPipelineProps: GitLinuxCdnPipelineProps) {
-    super(scope, id, gitLinuxCdnPipelineProps);
+  constructor(scope: Construct, id: string, repoCdnPipelineProps: RepoCdnPipelineProps) {
+    super(scope, id, repoCdnPipelineProps);
     const pipelineStages = [];
-    const gitOutput = new Artifact('GitOutput');
-    const gitSource = buildGitSourceAction(this, {
-      repoProps: gitLinuxCdnPipelineProps.repoProps,
-      repoOutput: gitOutput,
+    const repoOutput = new Artifact('RepoOutput');
+    const repoSource = buildRepoSourceAction(this, {
+      repoProps: repoCdnPipelineProps.repoProps,
+      repoOutput: repoOutput,
     });
     const sourceStage = {
       stageName: 'Source',
       actions: [
-        gitSource,
+        repoSource,
       ],
     };
     pipelineStages.push(sourceStage);
@@ -49,7 +49,7 @@ export class GitLinuxCdnPipelineStack extends Stack {
     const linuxBuild = new CodeBuildAction({
       actionName: 'LinuxBuild',
       project: buildProject,
-      input: gitOutput,
+      input: repoOutput,
       outputs: [
         buildOutput,
       ],
@@ -63,9 +63,9 @@ export class GitLinuxCdnPipelineStack extends Stack {
     pipelineStages.push(buildStage);
     /* Todo:
      * optional stages (in order from build) - staging (2 buckets & existingBucketObj), test, approval
-     * config - filenames of spec files (enabled if specified); priveleged (+build)
+     * config - filenames of spec files; priveleged (+build)
      */
-    if (gitLinuxCdnPipelineProps.enableTestStage) {
+    if (repoCdnPipelineProps.enableTestStage) {
       const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
       const testCache = Cache.bucket(cdnPipelineCache, {
         prefix: 'test'
@@ -78,7 +78,7 @@ export class GitLinuxCdnPipelineStack extends Stack {
       const linuxTest = new CodeBuildAction({
         actionName: 'LinuxTest',
         project: testProject,
-        input: gitOutput,
+        input: repoOutput,
         type: CodeBuildActionType.TEST,
       });
       const testStage = {
@@ -92,7 +92,7 @@ export class GitLinuxCdnPipelineStack extends Stack {
     const s3Deploy = new S3DeployAction({
       actionName: 'S3Deploy',
       input: buildOutput,
-      bucket: gitLinuxCdnPipelineProps.distributionSource,
+      bucket: repoCdnPipelineProps.distributionSource,
     });
     const deployStage = {
       stageName: 'Deploy',
@@ -105,7 +105,7 @@ export class GitLinuxCdnPipelineStack extends Stack {
       service: 'cloudfront',
       resource: 'distribution',
       region: '',
-      resourceName: gitLinuxCdnPipelineProps.distributionId,
+      resourceName: repoCdnPipelineProps.distributionId,
     }, this);
     const distributionPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
@@ -128,7 +128,7 @@ export class GitLinuxCdnPipelineStack extends Stack {
       ],
     });
     const distributionProps = {
-      distributionId: gitLinuxCdnPipelineProps.distributionId,
+      distributionId: repoCdnPipelineProps.distributionId,
     };
     const cacheInvalidate = new LambdaInvokeAction({
       actionName: 'CacheInvalidate',
@@ -142,7 +142,7 @@ export class GitLinuxCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(invalidateStage);
-    new Pipeline(this, 'GitLinuxCdnPipeline', {
+    new Pipeline(this, 'RepoCdnPipeline', {
       stages: pipelineStages,
       restartExecutionOnUpdate: false,
     });

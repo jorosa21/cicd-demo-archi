@@ -4,37 +4,37 @@ import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
-import { RepoProps, buildGitSourceAction } from './pipeline-helper';
+import { RepoProps, buildRepoSourceAction } from './pipeline-helper';
 
-export interface GitServerlessPipelineProps extends StackProps {
+export interface RepoSlsPipelineProps extends StackProps {
   serviceId: string,
   appRepoProps: RepoProps,
-  infraRepoProps: RepoProps,
+  archiRepoProps: RepoProps,
   pipelineCache: Bucket,
 }
 
-export class GitServerlessPipelineStack extends Stack {
+export class RepoSlsPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, gitServerlessPipelineProps: GitServerlessPipelineProps) {
-    super(scope, id, gitServerlessPipelineProps);
+  constructor(scope: Construct, id: string, repoSlsPipelineProps: RepoSlsPipelineProps) {
+    super(scope, id, repoSlsPipelineProps);
     const pipelineStages = [];
     const appOutput = new Artifact('AppOutput');
-    const appSource = buildGitSourceAction(this, {
-      repoProps: gitServerlessPipelineProps.appRepoProps,
+    const appSource = buildRepoSourceAction(this, {
+      repoProps: repoSlsPipelineProps.appRepoProps,
       namePrefix: 'App',
       repoOutput: appOutput,
     });
-    const infraOutput = new Artifact('InfraOutput');
-    const infraSource = buildGitSourceAction(this, {
-      repoProps: gitServerlessPipelineProps.infraRepoProps,
-      namePrefix: 'Infra',
-      repoOutput: infraOutput,
+    const archiOutput = new Artifact('ArchiOutput');
+    const archiSource = buildRepoSourceAction(this, {
+      repoProps: repoSlsPipelineProps.archiRepoProps,
+      namePrefix: 'Archi',
+      repoOutput: archiOutput,
     });
     const sourceStage = {
       stageName: 'Source',
       actions: [
         appSource,
-        infraSource,
+        archiSource,
       ],
     };
     pipelineStages.push(sourceStage);
@@ -73,10 +73,10 @@ export class GitServerlessPipelineStack extends Stack {
       project: dockerProject,
       input: appOutput,
     });
-    const serverlessId = 'Serverless';
+    const slsId = 'Sls';
     const cdkSynthCmd = 'npx cdk synth -c imageRepoName=' + dockerRepository.repositoryName
-      + ' -c serverlessId=' + serverlessId;
-    const serviceTemplateFilename = serverlessId + '.template.json';
+      + ' -c slsId=' + slsId;
+    const serviceTemplateFilename = slsId + '.template.json';
     const cdkSpec = BuildSpec.fromObject({
       version: '0.2',
       phases: {
@@ -102,8 +102,8 @@ export class GitServerlessPipelineStack extends Stack {
     const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
-    const cdkCache = Cache.bucket(gitServerlessPipelineProps.pipelineCache, {
-      prefix: gitServerlessPipelineProps.serviceId,
+    const cdkCache = Cache.bucket(repoSlsPipelineProps.pipelineCache, {
+      prefix: repoSlsPipelineProps.serviceId,
     });
     const cdkProject = new PipelineProject(this, 'CdkProject', {
       environment: linuxEnv,
@@ -114,7 +114,7 @@ export class GitServerlessPipelineStack extends Stack {
     const cdkBuild = new CodeBuildAction({
       actionName: 'CdkBuild',
       project: cdkProject,
-      input: infraOutput,
+      input: archiOutput,
       outputs: [
         cdkOutput,
       ],
@@ -128,13 +128,13 @@ export class GitServerlessPipelineStack extends Stack {
     };
     /* Todo:
      * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test, approval
-     * config - filenames of spec files (enabled if specified); priveleged (+build)
+     * config - filenames of spec files; priveleged (+build)
      */
     pipelineStages.push(buildStage);
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
-      stackName: gitServerlessPipelineProps.serviceId,
+      stackName: repoSlsPipelineProps.serviceId,
       templatePath: lambdaTemplate,
       adminPermissions: true,
     });
@@ -145,7 +145,7 @@ export class GitServerlessPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(deployStage);
-    new Pipeline(this, 'GitServerlessPipeline', {
+    new Pipeline(this, 'RepoSlsPipeline', {
       stages: pipelineStages,
       restartExecutionOnUpdate: false,
     });

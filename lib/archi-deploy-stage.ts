@@ -1,20 +1,20 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { PipelineCacheStack } from './pipeline-cache-stack';
-import { GitServerlessPipelineStack } from './git-serverless-pipeline-stack';
-import { GitLinuxCdnPipelineStack } from './git-linux-cdn-pipeline-stack';
+import { RepoSlsPipelineStack } from './repo-sls-pipeline-stack';
+import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
 import { Context, buildRepoProps } from './pipeline-helper';
 
 
 interface ServicePipelineContext {
   app: Context,
-  infra: Context,
+  archi: Context,
 }
 
 /**
- * Deployable unit of entire app
+ * Deployable unit of entire architecture
  */
-export class AppDeployStage extends Stage {
+export class ArchiDeployStage extends Stage {
 
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
@@ -29,7 +29,7 @@ export class AppDeployStage extends Stage {
     });
     const sitePipelineContext = this.node.tryGetContext('SitePipeline');
     const siteRepoProps = buildRepoProps(sitePipelineContext);
-    new GitLinuxCdnPipelineStack(this, 'SitePipeline', {
+    new RepoCdnPipelineStack(this, 'SitePipeline', {
       repoProps: siteRepoProps,
       distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
@@ -42,11 +42,11 @@ export class AppDeployStage extends Stage {
     Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
       const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext];
       const appRepoProps = buildRepoProps(servicePipelineContext.app);
-      const infraRepoProps = buildRepoProps(servicePipelineContext.infra);
-      new GitServerlessPipelineStack(this, serviceId + 'Pipeline', {
+      const archiRepoProps = buildRepoProps(servicePipelineContext.archi);
+      new RepoSlsPipelineStack(this, serviceId + 'Pipeline', {
         serviceId,
         appRepoProps,
-        infraRepoProps,
+        archiRepoProps,
         pipelineCache: servicePipelineCache.bucket,
       });
     });

@@ -3,7 +3,7 @@ import { Artifact } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeCommitSourceAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Construct, SecretValue } from '@aws-cdk/core';
 
-interface GithubProps {
+interface GitHubProps {
   tokenName: string,
   owner: string,
   repoName: string,
@@ -14,12 +14,22 @@ interface CodeCommitProps {
   create: boolean,
 }
 
-export type RepoProps = GithubProps | CodeCommitProps;
+export type RepoProps = GitHubProps | CodeCommitProps;
 
-export interface GitSourceActionProps {
+export interface RepoSourceActionProps {
   repoProps: RepoProps,
   namePrefix?: string,
   repoOutput: Artifact,
+}
+
+export interface StageProps {
+  enableStaging: boolean,
+  enableTest: boolean,
+  enableDeploy: boolean,
+  enableApproval: boolean,
+  stagingSpecFilename?: string,
+  testSpecFilename?: string,
+  deploySpecFilename?: string,
 }
 
 export interface Context {
@@ -34,40 +44,40 @@ export function buildRepoProps (context: Context) {
     };
   } else {
     return {
-      tokenName: context.githubTokenName,
-      owner: context.githubOwner,
-      repoName: context.githubRepoName,
+      tokenName: context.gitHubTokenName,
+      owner: context.gitHubOwner,
+      repoName: context.gitHubRepoName,
     };
   };  
 }
 
-export function buildGitSourceAction (scope: Construct, gitSourceActionProps: GitSourceActionProps) {
-  const actionName = (gitSourceActionProps.namePrefix ?? '') + 'GitSource';
-  if ((<CodeCommitProps>gitSourceActionProps.repoProps).repoName !== undefined) {
-    const repoId = scope.node.id + (gitSourceActionProps.namePrefix ?? '') + 'Repo';
-    const codeCommitProps = gitSourceActionProps.repoProps as CodeCommitProps;
-    let infraRepo: IRepository;
+export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: RepoSourceActionProps) {
+  const actionName = (repoSourceActionProps.namePrefix ?? '') + 'RepoSource';
+  if ((<CodeCommitProps>repoSourceActionProps.repoProps).repoName !== undefined) {
+    const repoId = scope.node.id + (repoSourceActionProps.namePrefix ?? '') + 'Repo';
+    const codeCommitProps = repoSourceActionProps.repoProps as CodeCommitProps;
+    let repository: IRepository;
     if (codeCommitProps.create) {
-      infraRepo = new Repository(scope, repoId, {
+      repository = new Repository(scope, repoId, {
         repositoryName: codeCommitProps.repoName,
       });  
     } else {
-      infraRepo = Repository.fromRepositoryName(scope, repoId, codeCommitProps.repoName);
+      repository = Repository.fromRepositoryName(scope, repoId, codeCommitProps.repoName);
     }
     return new CodeCommitSourceAction({
       actionName,
-      output: gitSourceActionProps.repoOutput,
-      repository: infraRepo,
+      output: repoSourceActionProps.repoOutput,
+      repository,
     });
   } else {
-    const githubProps = gitSourceActionProps.repoProps as GithubProps;
-    const githubToken = SecretValue.secretsManager(githubProps.tokenName);
+    const gitHubProps = repoSourceActionProps.repoProps as GitHubProps;
+    const gitHubToken = SecretValue.secretsManager(gitHubProps.tokenName);
     return new GitHubSourceAction({
       actionName,
-      output: gitSourceActionProps.repoOutput,
-      oauthToken: githubToken,
-      owner: githubProps.owner,
-      repo: githubProps.repoName,
+      output: repoSourceActionProps.repoOutput,
+      oauthToken: gitHubToken,
+      owner: gitHubProps.owner,
+      repo: gitHubProps.repoName,
     });
   };
 }

@@ -1,13 +1,13 @@
 {
-  "infraPipelineId": "CicdDemoInfraPipeline",
-  "InfraPipeline": {
-    "codeCommitRepoName": "cicd-demo-infra",
-    "codeCommitCreate": true
+  "archiPipelineId": "CicdDemoArchiPipeline",
+  "ArchiPipeline": {
+    "codeCommitRepoName": "cicd-demo-archi",
+    "codeCommitCreate": true,
+    "manualApproval": true
   },
   "SitePipeline": {
     "codeCommitRepoName": "angular-sample",
     "codeCommitCreate": true,
-    "enableTestStage": true,
     "testSpecFilename": "testspec.yml"
   },
   "ServicePipelines": {
@@ -16,7 +16,7 @@
         "codeCommitRepoName": "net-sample1",
         "codeCommitCreate": true
       },
-      "infra": {
+      "archi": {
         "codeCommitRepoName": "serverless-demo",
         "codeCommitCreate": true
       }
@@ -26,7 +26,7 @@
         "codeCommitRepoName": "net-sample2",
         "codeCommitCreate": true
       },
-      "infra": {
+      "archi": {
         "codeCommitRepoName": "serverless-demo",
         "codeCommitCreate": false
       }
