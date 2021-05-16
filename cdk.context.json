@@ -1,34 +1,41 @@
 {
   "archiPipelineId": "CicdDemoArchiPipeline",
   "ArchiPipeline": {
-    "codeCommitRepoName": "cicd-demo-archi",
-    "codeCommitCreate": true,
-    "manualApproval": true
+    "repoKind": "CodeCommit",
+    "repoName": "cicd-demo-archi",
+    "createRepo": true,
+    "enableApproval": true
   },
   "SitePipeline": {
-    "codeCommitRepoName": "angular-sample",
-    "codeCommitCreate": true,
+    "repoKind": "CodeCommit",
+    "repoName": "angular-sample",
+    "createRepo": true,
+    "enableTest": true,
     "testSpecFilename": "testspec.yml"
   },
   "ServicePipelines": {
     "Service1": {
       "app": {
-        "codeCommitRepoName": "net-sample1",
-        "codeCommitCreate": true
+        "repoKind": "CodeCommit",
+        "repoName": "net-sample1",
+        "createRepo": true
       },
       "archi": {
-        "codeCommitRepoName": "serverless-demo",
-        "codeCommitCreate": true
+        "repoKind": "CodeCommit",
+        "repoName": "serverless-demo",
+        "createRepo": true
       }
     },
     "Service2": {
       "app": {
-        "codeCommitRepoName": "net-sample2",
-        "codeCommitCreate": true
+        "repoKind": "CodeCommit",
+        "repoName": "net-sample2",
+        "createRepo": true
       },
       "archi": {
-        "codeCommitRepoName": "serverless-demo",
-        "codeCommitCreate": false
+        "repoKind": "CodeCommit",
+        "repoName": "serverless-demo",
+        "createRepo": false
       }
     }
   }
