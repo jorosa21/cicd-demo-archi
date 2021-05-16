@@ -38,27 +38,27 @@ export class RepoSlsPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(sourceStage);
-    const dockerRepository = new Repository(this, 'DockerRepository');
-    const registry = dockerRepository.repositoryUri.split('/', 1)[0];
-    const dockerLoginCmd = 'aws ecr get-login-password | docker login --username AWS --password-stdin ' + registry;
-    const dockerTag = dockerRepository.repositoryUri;
-    const dockerPullCmd = 'docker pull ' + dockerTag;
-    const dockerBuildCmd = 'docker build -t ' + dockerTag + ' .';
-    const dockerPushCmd = 'docker push ' + dockerTag;
-    const dockerSpec = BuildSpec.fromObject({
+    const containerRepository = new Repository(this, 'ContainerRepository');
+    const containerSpec = BuildSpec.fromObject({
       version: '0.2',
+      env: {
+        variables: {
+          REPOSITORY_URI: containerRepository.repositoryUri,
+        },
+      },
       phases: {
         pre_build: {
           commands: [
-            dockerLoginCmd,
-            dockerPullCmd,
+            '$(aws ecr get-login --no-include-email)',
+            'docker pull ${REPOSITORY_URI}:latest || true',
           ],
         },
         build: {
-          commands: dockerBuildCmd,
+          commands: 'DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-from ${REPOSITORY_URI}:latest -t ${REPOSITORY_URI}:latest .',
         },
         post_build: {
-          commands: dockerPushCmd,
+          commands: 'docker push ${REPOSITORY_URI}',
         },
       },
     });
@@ -66,19 +66,19 @@ export class RepoSlsPipelineStack extends Stack {
       buildImage: LinuxBuildImage.STANDARD_5_0,
       privileged: true,
     };
-    const dockerProject = new PipelineProject(this, 'DockerProject', {
+    const containerProject = new PipelineProject(this, 'ContainerProject', {
       environment: linuxPrivilegedEnv,
-      buildSpec: dockerSpec,
+      buildSpec: containerSpec,
     });
-    AuthorizationToken.grantRead(dockerProject);
-    dockerRepository.grantPullPush(dockerProject);
-    const dockerBuild = new CodeBuildAction({
-      actionName: 'DockerBuild',
-      project: dockerProject,
+    AuthorizationToken.grantRead(containerProject);
+    containerRepository.grantPullPush(containerProject);
+    const containerBuild = new CodeBuildAction({
+      actionName: 'ContainerBuild',
+      project: containerProject,
       input: appOutput,
     });
     const slsId = 'Sls';
-    const cdkSynthCmd = 'npx cdk synth -c imageRepoName=' + dockerRepository.repositoryName
+    const cdkSynthCmd = 'npx cdk synth -c imageRepoName=' + containerRepository.repositoryName
       + ' -c slsId=' + slsId;
     const serviceTemplateFilename = slsId + '.template.json';
     const cdkSpec = BuildSpec.fromObject({
@@ -126,7 +126,7 @@ export class RepoSlsPipelineStack extends Stack {
     const buildStage = {
       stageName: 'Build',
       actions: [
-        dockerBuild,
+        containerBuild,
         cdkBuild,
       ],
     };
