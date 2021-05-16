@@ -136,7 +136,7 @@ export class RepoSlsContPipelineStack extends Stack {
     };
     /* Todo:
      * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test, approval
-     * config - filenames of spec files; priveleged (+build)
+     * config - filename of testspec file; additional commands for contSpec
      */
     pipelineStages.push(buildStage);
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);

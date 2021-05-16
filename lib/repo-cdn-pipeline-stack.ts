@@ -34,8 +34,7 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(sourceStage);
-    const cdnPipelineCache = new Bucket(this, 'CdnPipelineCache');
-    const buildCache = Cache.bucket(cdnPipelineCache, {
+    const buildCache = Cache.bucket(repoCdnPipelineProps.pipelineCache, {
       prefix: 'build'
     });
     const linuxEnvironment = {
@@ -63,11 +62,11 @@ export class RepoCdnPipelineStack extends Stack {
     pipelineStages.push(buildStage);
     /* Todo:
      * optional stages (in order from build) - staging (2 buckets & existingBucketObj), test, approval
-     * config - filenames of spec files; priveleged (+build)
+     * config - filename of testspec files; privileged build?
      */
     if (repoCdnPipelineProps.enableTestStage) {
       const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
-      const testCache = Cache.bucket(cdnPipelineCache, {
+      const testCache = Cache.bucket(repoCdnPipelineProps.pipelineCache, {
         prefix: 'test'
       });
       const testProject = new PipelineProject(this, 'TestProject', {
