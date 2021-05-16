@@ -49,7 +49,7 @@ export class RepoSlsContPipelineStack extends Stack {
       phases: {
         pre_build: {
           commands: [
-            '$(aws ecr get-login --no-include-email)',
+            'aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URI}',
             'docker pull ${REPO_URI}:latest || true',
           ],
         },
