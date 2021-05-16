@@ -1,6 +1,6 @@
 import { Construct, Stage, StageProps } from '@aws-cdk/core';
 import { PipelineCacheStack } from './pipeline-cache-stack';
-import { RepoSlsPipelineStack } from './repo-sls-pipeline-stack';
+import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
 import { Context, buildRepoProps } from './pipeline-helper';
@@ -43,7 +43,7 @@ export class ArchiDeployStage extends Stage {
       const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext];
       const appRepoProps = buildRepoProps(servicePipelineContext.app);
       const archiRepoProps = buildRepoProps(servicePipelineContext.archi);
-      new RepoSlsPipelineStack(this, serviceId + 'Pipeline', {
+      new RepoSlsContPipelineStack(this, serviceId + 'Pipeline', {
         serviceId,
         appRepoProps,
         archiRepoProps,

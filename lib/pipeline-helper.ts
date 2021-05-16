@@ -56,18 +56,18 @@ export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: 
   if ((<CodeCommitProps>repoSourceActionProps.repoProps).repoName !== undefined) {
     const repoId = scope.node.id + (repoSourceActionProps.namePrefix ?? '') + 'Repo';
     const codeCommitProps = repoSourceActionProps.repoProps as CodeCommitProps;
-    let repository: IRepository;
+    let repo: IRepository;
     if (codeCommitProps.create) {
-      repository = new Repository(scope, repoId, {
+      repo = new Repository(scope, repoId, {
         repositoryName: codeCommitProps.repoName,
       });  
     } else {
-      repository = Repository.fromRepositoryName(scope, repoId, codeCommitProps.repoName);
+      repo = Repository.fromRepositoryName(scope, repoId, codeCommitProps.repoName);
     }
     return new CodeCommitSourceAction({
       actionName,
       output: repoSourceActionProps.repoOutput,
-      repository,
+      repository: repo,
     });
   } else {
     const gitHubProps = repoSourceActionProps.repoProps as GitHubProps;
