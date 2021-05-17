@@ -3,7 +3,7 @@ import { PipelineCacheStack } from './pipeline-cache-stack';
 import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
-import { Context, buildRepoProps } from './pipeline-helper';
+import { Context, buildRepoProps, buildStageProps } from './pipeline-helper';
 
 
 interface ServicePipelineContext {
@@ -29,12 +29,13 @@ export class ArchiDeployStage extends Stage {
     });
     const sitePipelineContext = this.node.tryGetContext('SitePipeline');
     const siteRepoProps = buildRepoProps(sitePipelineContext);
+    const siteStageProps = buildStageProps(sitePipelineContext);
     new RepoCdnPipelineStack(this, 'SitePipeline', {
       repoProps: siteRepoProps,
+      stageProps: siteStageProps,
       distributionSource: site.sourceBucket,
       distributionId: site.distributionId,
       pipelineCache: sitePipelineCache.bucket,
-      enableTestStage: sitePipelineContext.enableTestStage,
       env: siteEnv,
     });
     const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
@@ -43,10 +44,12 @@ export class ArchiDeployStage extends Stage {
       const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext];
       const appRepoProps = buildRepoProps(servicePipelineContext.app);
       const archiRepoProps = buildRepoProps(servicePipelineContext.archi);
+      const serviceStageProps = buildStageProps(servicePipelineContext);
       new RepoSlsContPipelineStack(this, serviceId + 'Pipeline', {
         serviceId,
         appRepoProps,
         archiRepoProps,
+        stageProps: serviceStageProps,
         pipelineCache: servicePipelineCache.bucket,
       });
     });

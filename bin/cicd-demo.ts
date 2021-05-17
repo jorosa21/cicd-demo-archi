@@ -2,7 +2,7 @@
 import 'source-map-support/register';
 import { App } from '@aws-cdk/core';
 import { RepoCloudPipelineStack } from '../lib/repo-cloud-pipeline-stack';
-import { buildRepoProps } from '../lib/pipeline-helper';
+import { buildRepoProps, buildStageProps } from '../lib/pipeline-helper';
 
 const app = new App();
 // cross-region deployment so the environment need to be explicit
@@ -12,9 +12,11 @@ const appEnv = {
 };
 const archiPipelineId = app.node.tryGetContext('archiPipelineId');
 const archiPipelineContext = app.node.tryGetContext('ArchiPipeline');
-const repoProps = buildRepoProps(archiPipelineContext);
+const archiRepoProps = buildRepoProps(archiPipelineContext);
+const archiStageProps = buildStageProps(archiPipelineContext);
 new RepoCloudPipelineStack(app, archiPipelineId, {
-  repoProps,
+  repoProps: archiRepoProps,
+  stageProps: archiStageProps,
   env: appEnv,
 });
 app.synth();

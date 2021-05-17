@@ -24,7 +24,8 @@
         "repoKind": "CodeCommit",
         "repoName": "serverless-demo",
         "createRepo": true
-      }
+      },
+      "enableApproval": true
     },
     "Service2": {
       "app": {
@@ -36,7 +37,8 @@
         "repoKind": "CodeCommit",
         "repoName": "serverless-demo",
         "createRepo": false
-      }
+      },
+      "enableApproval": true
     }
   }
 }

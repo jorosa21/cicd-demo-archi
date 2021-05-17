@@ -7,14 +7,14 @@ import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
-import { RepoProps, buildRepoSourceAction } from './pipeline-helper';
+import { RepoProps, StageProps, buildRepoSourceAction, ContextError } from './pipeline-helper';
 
 export interface RepoCdnPipelineProps extends StackProps {
   repoProps: RepoProps,
+  stageProps: StageProps,
   distributionSource: Bucket,
   distributionId: string,
   pipelineCache: Bucket,
-  enableTestStage: boolean,
 }
 
 export class RepoCdnPipelineStack extends Stack {
@@ -61,11 +61,15 @@ export class RepoCdnPipelineStack extends Stack {
     };
     pipelineStages.push(buildStage);
     /* Todo:
-     * optional stages (in order from build) - staging (2 buckets & existingBucketObj), test, approval
-     * config - filename of testspec files; privileged build?
+     * optional stages (in order from build) - staging (2 buckets & existingBucketObj), approval
+     * config - privileged build?
      */
-    if (repoCdnPipelineProps.enableTestStage) {
-      const testSpec = BuildSpec.fromSourceFilename('testspec.yml');
+    if (repoCdnPipelineProps.stageProps.enableTest) {
+      const testSpecFilename = repoCdnPipelineProps.stageProps.testSpecFilename;
+      if (!testSpecFilename) {
+        throw new ContextError('Invalid test spec filename.');
+      }
+      const testSpec = BuildSpec.fromSourceFilename(testSpecFilename);
       const testCache = Cache.bucket(repoCdnPipelineProps.pipelineCache, {
         prefix: 'test'
       });

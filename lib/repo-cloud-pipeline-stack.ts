@@ -3,10 +3,11 @@ import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { ArchiDeployStage } from './archi-deploy-stage';
-import { RepoProps, buildRepoSourceAction } from './pipeline-helper';
+import { RepoProps, StageProps, buildRepoSourceAction } from './pipeline-helper';
 
 export interface RepoCloudPipelineProps extends StackProps {
   repoProps: RepoProps,
+  stageProps: StageProps,
 }
 
 export class RepoCloudPipelineStack extends Stack {
@@ -34,8 +35,10 @@ export class RepoCloudPipelineStack extends Stack {
     });
     // This is where we add the application stages
     // ...
-    const approval = repoCloudPipeline.addStage('Approval');
-    approval.addManualApprovalAction();
+    if (repoCloudPipelineProps.stageProps.enableApproval) {
+      const approval = repoCloudPipeline.addStage('Approval');
+      approval.addManualApprovalAction();  
+    }
     const archiDeploy = new ArchiDeployStage(this, 'ArchiDeploy');
     repoCloudPipeline.addApplicationStage(archiDeploy);
   }

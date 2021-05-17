@@ -3,13 +3,14 @@ import { Bucket } from '@aws-cdk/aws-s3';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { CodeBuildAction, CloudFormationCreateUpdateStackAction } from '@aws-cdk/aws-codepipeline-actions';
-import { RepoProps, buildRepoSourceAction } from './pipeline-helper';
+import { CodeBuildAction, CloudFormationCreateUpdateStackAction, ManualApprovalAction } from '@aws-cdk/aws-codepipeline-actions';
+import { RepoProps, StageProps, buildRepoSourceAction } from './pipeline-helper';
 
 export interface RepoSlsContPipelineProps extends StackProps {
   serviceId: string,
   appRepoProps: RepoProps,
   archiRepoProps: RepoProps,
+  stageProps: StageProps,
   pipelineCache: Bucket,
 }
 
@@ -135,10 +136,22 @@ export class RepoSlsContPipelineStack extends Stack {
       ],
     };
     /* Todo:
-     * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test, approval
+     * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test
      * config - filename of testspec file; additional commands for contSpec
      */
     pipelineStages.push(buildStage);
+    if (repoSlsContPipelineProps.stageProps.enableApproval) {
+      const approvalAction = new ManualApprovalAction({
+        actionName: 'ManualApproval',
+      });
+      const approvalStage = {
+        stageName: 'Approval',
+        actions: [
+          approvalAction,
+        ],
+      };
+      pipelineStages.push(approvalStage);
+    };
     const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
     const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
       actionName: 'LambdaDeploy',
