@@ -3,8 +3,8 @@ import { PipelineCacheStack } from './pipeline-cache-stack';
 import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
+import { NetworkStack } from './network-stack';
 import { Context, buildRepoProps, buildStageProps } from './pipeline-helper';
-
 
 interface ServicePipelineContext {
   app: Context,
@@ -38,6 +38,7 @@ export class ArchiDeployStage extends Stage {
       pipelineCache: sitePipelineCache.bucket,
       env: siteEnv,
     });
+    const serviceNetwork = new NetworkStack(this, 'ServiceNetwork');
     const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
     const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
     Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
@@ -51,6 +52,7 @@ export class ArchiDeployStage extends Stage {
         archiRepoProps,
         stageProps: serviceStageProps,
         pipelineCache: servicePipelineCache.bucket,
+        vpcId: serviceNetwork.vpcId,
       });
     });
   }

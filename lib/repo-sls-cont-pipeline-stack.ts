@@ -12,6 +12,7 @@ export interface RepoSlsContPipelineProps extends StackProps {
   archiRepoProps: RepoProps,
   stageProps: StageProps,
   pipelineCache: Bucket,
+  vpcId: string,
 }
 
 export class RepoSlsContPipelineStack extends Stack {
@@ -84,6 +85,7 @@ export class RepoSlsContPipelineStack extends Stack {
       version: '0.2',
       env: {
         variables: {
+          VPC_ID: repoSlsContPipelineProps.vpcId,
           REPO_NAME: contRepo.repositoryName,
           STACK_ID: stackId,
         },
@@ -93,7 +95,7 @@ export class RepoSlsContPipelineStack extends Stack {
           commands: 'yarn install',
         },
         build: {
-          commands: 'npx cdk synth -c repoName=${REPO_NAME} -c stackId=${STACK_ID}',
+          commands: 'npx cdk synth -c vpcId=${VPC_ID} -c repoName=${REPO_NAME} -c stackId=${STACK_ID}',
         },
       },
       artifacts: {
