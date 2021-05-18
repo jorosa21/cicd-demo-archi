@@ -114,8 +114,11 @@ export class RepoSlsContPipelineStack extends Stack {
         deployPolicy,
       ],
     });
-    AuthorizationToken.grantRead(deployHandler);
-    contRepo.grantPull(deployHandler);
+    contRepo.grant(deployHandler,
+      "ecr:SetRepositoryPolicy",
+      "ecr:GetRepositoryPolicy",
+      "ecr:InitiateLayerUpload"
+    );
     const deployProps = {
       funcName: repoSlsContPipelineProps.func.functionName,
       repoUri: contRepo.repositoryUri + ':latest',
