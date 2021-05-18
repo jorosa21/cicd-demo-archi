@@ -114,6 +114,7 @@ export class RepoSlsContPipelineStack extends Stack {
         deployPolicy,
       ],
     });
+    AuthorizationToken.grantRead(deployHandler);
     contRepo.grantPull(deployHandler);
     const deployProps = {
       funcName: repoSlsContPipelineProps.func.functionName,

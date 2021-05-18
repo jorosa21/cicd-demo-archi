@@ -3,7 +3,7 @@ import { PipelineCacheStack } from './pipeline-cache-stack';
 import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
-import { NetworkStack } from './network-stack';
+import { NetworkClusterStack } from './network-cluster-stack';
 import { SlsContStack } from './sls-cont-stack';
 import { Context, buildRepoProps, buildStageProps } from './pipeline-helper';
 
@@ -34,7 +34,7 @@ export class ArchiDeployStage extends Stage {
       pipelineCache: sitePipelineCache.bucket,
       env: siteEnv,
     });
-    const serviceNetwork = new NetworkStack(this, 'ServiceNetwork');
+    const serviceNetwork = new NetworkClusterStack(this, 'ServiceNetwork');
     const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
     Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
       const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, Context];
