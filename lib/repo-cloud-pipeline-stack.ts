@@ -22,7 +22,6 @@ export class RepoCloudPipelineStack extends Stack {
     const cdkOutput = new Artifact('CdkOutput');
     const linuxEnvironment = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
-      privileged: true,
     };
     const cdkSynth = SimpleSynthAction.standardYarnSynth({
       sourceArtifact: repoOutput,

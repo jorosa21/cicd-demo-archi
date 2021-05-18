@@ -12,7 +12,6 @@ export interface RepoSlsContPipelineProps extends StackProps {
   archiRepoProps: RepoProps,
   stageProps: StageProps,
   pipelineCache: Bucket,
-  vpcId: string,
 }
 
 export class RepoSlsContPipelineStack extends Stack {
@@ -85,7 +84,7 @@ export class RepoSlsContPipelineStack extends Stack {
       version: '0.2',
       env: {
         variables: {
-          VPC_ID: repoSlsContPipelineProps.vpcId,
+          VPC_ID: 'repoSlsContPipelineProps.vpcId',
           REPO_NAME: contRepo.repositoryName,
           STACK_ID: stackId,
         },

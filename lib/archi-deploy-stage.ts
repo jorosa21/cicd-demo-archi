@@ -56,7 +56,6 @@ export class ArchiDeployStage extends Stage {
         archiRepoProps,
         stageProps: serviceStageProps,
         pipelineCache: servicePipelineCache.bucket,
-        vpcId: '',
       });
     });
   }
