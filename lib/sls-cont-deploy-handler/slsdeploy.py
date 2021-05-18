@@ -1,4 +1,4 @@
-from json import dumps
+from json import dumps, loads, JSONDecodeError
 from logging import getLogger, INFO
 from boto3 import client
 from botocore.exceptions import ClientError
@@ -7,33 +7,37 @@ logger = getLogger()
 logger.setLevel(INFO)
 
 func = client('lambda')
+cp = client('codepipeline')
 
 def on_event(event, context):
   logger.info('Received event: %s' % dumps(event))
-  request_type = event['RequestType']
-  if request_type == 'Create': return on_create(event)
-  if request_type == 'Update': return on_create(event)
-  if request_type == 'Delete': return on_delete(event)
-  raise Exception('Invalid request type: %s' % request_type)
-
-def on_create(event):
-  func_name = event['ResourceProperties']['funcName']
-  repo_uri = event['ResourceProperties']['repoUri']
+  cp_job = event['CodePipeline.job']
+  job_id = cp_job['id']
+  user_parameters_str = cp_job['data']['actionConfiguration']['configuration']['UserParameters']
   try:
-    update_code(func_name, repo_uri)
+    user_parameters = loads(user_parameters_str)
+    func.update_function_code(
+      FunctionName=user_parameters['funcName'],
+      ImageUri=user_parameters['repoUri'],
+      Publish=True
+    )
+    cp.put_job_success_result(jobId=job_id)
   except ClientError as e:
     logger.error('Error: %s', e)
-    raise e
-  return
-
-def on_delete(event):
-  # Todo: what should be done here?
-  return
-
-def update_code(func_name, repo_uri):
-  func.update_function_code(
-    FunctionName=func_name,
-    ImageUri=repo_uri,
-    Publish=True
-  )
+    cp.put_job_failure_result(
+      jobId=job_id,
+      failureDetails={
+        'type': 'JobFailed',
+        'message': e.response['Error']['Message']
+      }
+    )
+  except JSONDecodeError as e:
+    logger.error('Error: %s', e)
+    cp.put_job_failure_result(
+      jobId=job_id,
+      failureDetails={
+        'type': 'ConfigurationError',
+        'message': e.msg
+      }
+    )
   return

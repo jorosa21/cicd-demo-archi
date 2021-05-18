@@ -19,7 +19,7 @@ def on_event(event, context):
   time_reference = str(time()).replace('.', '')
   try:
     user_parameters = loads(user_parameters_str)
-    invalidation = cf.create_invalidation(
+    cf.create_invalidation(
       DistributionId=user_parameters['distributionId'],
       InvalidationBatch={
         'Paths': {

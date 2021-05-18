@@ -114,9 +114,10 @@ export class RepoSlsContPipelineStack extends Stack {
         deployPolicy,
       ],
     });
+    contRepo.grantPull(deployHandler);
     const deployProps = {
       funcName: repoSlsContPipelineProps.func.functionName,
-      repoUri: contRepo.repositoryUri,
+      repoUri: contRepo.repositoryUri + ':latest',
     };
     const slsDeploy = new LambdaInvokeAction({
       actionName: 'SlsDeploy',
