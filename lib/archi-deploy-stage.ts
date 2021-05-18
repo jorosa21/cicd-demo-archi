@@ -4,6 +4,7 @@ import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
 import { NetworkStack } from './network-stack';
+import { SlsContStack } from './sls-cont-stack';
 import { Context, buildRepoProps, buildStageProps } from './pipeline-helper';
 
 interface ServicePipelineContext {
@@ -43,6 +44,9 @@ export class ArchiDeployStage extends Stage {
     const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
     Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
       const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext];
+      const app = new SlsContStack(this, serviceId, {
+        vpc: serviceNetwork.vpc,
+      });
       const appRepoProps = buildRepoProps(servicePipelineContext.app);
       const archiRepoProps = buildRepoProps(servicePipelineContext.archi);
       const serviceStageProps = buildStageProps(servicePipelineContext);
@@ -52,7 +56,7 @@ export class ArchiDeployStage extends Stage {
         archiRepoProps,
         stageProps: serviceStageProps,
         pipelineCache: servicePipelineCache.bucket,
-        vpcId: serviceNetwork.vpcId,
+        vpcId: '',
       });
     });
   }

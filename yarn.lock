@@ -320,27 +320,6 @@
     "@aws-cdk/core" "1.101.0"
     constructs "^3.3.69"
 
-"@aws-cdk/aws-ecs-patterns@1.101.0":
-  version "1.101.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-ecs-patterns/-/aws-ecs-patterns-1.101.0.tgz#7c2be458ca9a38f130ec85c1f38a99e5cc988eca"
-  integrity sha512-KKZIcLfAag5+qlARHA+uyrLZdjrJtVrkpfEenJFuOrgw48kw/pIh/NS4LBVt9YGu2INacjnFDX1wDzAq6pIG3g==
-  dependencies:
-    "@aws-cdk/aws-applicationautoscaling" "1.101.0"
-    "@aws-cdk/aws-certificatemanager" "1.101.0"
-    "@aws-cdk/aws-ec2" "1.101.0"
-    "@aws-cdk/aws-ecs" "1.101.0"
-    "@aws-cdk/aws-elasticloadbalancingv2" "1.101.0"
-    "@aws-cdk/aws-events" "1.101.0"
-    "@aws-cdk/aws-events-targets" "1.101.0"
-    "@aws-cdk/aws-iam" "1.101.0"
-    "@aws-cdk/aws-route53" "1.101.0"
-    "@aws-cdk/aws-route53-targets" "1.101.0"
-    "@aws-cdk/aws-servicediscovery" "1.101.0"
-    "@aws-cdk/aws-sqs" "1.101.0"
-    "@aws-cdk/core" "1.101.0"
-    "@aws-cdk/cx-api" "1.101.0"
-    constructs "^3.3.69"
-
 "@aws-cdk/aws-ecs@1.101.0":
   version "1.101.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-ecs/-/aws-ecs-1.101.0.tgz#58bdff5406d08815443582e6a8dba77b12183392"
@@ -866,6 +845,19 @@
   version "1.101.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/region-info/-/region-info-1.101.0.tgz#86a52d7d16d04168fe4b5d3bd88c28e16ac4adcb"
   integrity sha512-7FpuwCSkEGSr9KbfAgBa0BQc6E3HXuOI4Kc68gQwF5x2z6j0Z7zr4e+SIbYazX7TfKXNCmp8jWHsc6Q63fo6Cg==
+
+"@aws-solutions-constructs/aws-apigateway-lambda@1.101.0":
+  version "1.101.0"
+  resolved "https://registry.yarnpkg.com/@aws-solutions-constructs/aws-apigateway-lambda/-/aws-apigateway-lambda-1.101.0.tgz#2e79b42d50b6262f00137a4644bdf4cd1e85e837"
+  integrity sha512-389NLfFK4Upen+7vgP2zoq6ECTi8MxJombqzHZJcxgJd2yBstvgiapjPkYJR9tZ+E8CBm+BuXy4HgzRwkaBYug==
+  dependencies:
+    "@aws-cdk/aws-apigateway" "1.101.0"
+    "@aws-cdk/aws-iam" "1.101.0"
+    "@aws-cdk/aws-lambda" "1.101.0"
+    "@aws-cdk/aws-logs" "1.101.0"
+    "@aws-cdk/core" "1.101.0"
+    "@aws-solutions-constructs/core" "1.101.0"
+    constructs "^3.2.0"
 
 "@aws-solutions-constructs/aws-cloudfront-s3@1.101.0":
   version "1.101.0"

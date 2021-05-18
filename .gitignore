@@ -1,7 +1,10 @@
+# ts
 *.js
-!jest.config.js
 *.d.ts
+
+# yarn
 node_modules
+yarn-error.log
 
 # CDK asset staging directory
 .cdk.staging

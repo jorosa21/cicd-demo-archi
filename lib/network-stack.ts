@@ -1,14 +1,13 @@
-import { Construct, Stack, StackProps, CfnOutput } from '@aws-cdk/core';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { Vpc } from '@aws-cdk/aws-ec2';
 
 export class NetworkStack extends Stack {
 
-  public readonly vpcId: string;
+  public readonly vpc: Vpc;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-    const vpc = new Vpc(this, 'ServiceNetwork');
-    this.vpcId = vpc.vpcId;
+    this.vpc = new Vpc(this, 'Vpc');
   }
 
 }
