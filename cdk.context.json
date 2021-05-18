@@ -15,29 +15,15 @@
   },
   "ServicePipelines": {
     "Service1": {
-      "app": {
-        "repoKind": "CodeCommit",
-        "repoName": "net-sample1",
-        "createRepo": true
-      },
-      "archi": {
-        "repoKind": "CodeCommit",
-        "repoName": "serverless-demo",
-        "createRepo": true
-      },
+      "repoKind": "CodeCommit",
+      "repoName": "net-sample1",
+      "createRepo": true,
       "enableApproval": true
     },
     "Service2": {
-      "app": {
-        "repoKind": "CodeCommit",
-        "repoName": "net-sample2",
-        "createRepo": true
-      },
-      "archi": {
-        "repoKind": "CodeCommit",
-        "repoName": "serverless-demo",
-        "createRepo": false
-      },
+      "repoKind": "CodeCommit",
+      "repoName": "net-sample2",
+      "createRepo": true,
       "enableApproval": true
     }
   }

@@ -77,7 +77,6 @@ export function buildRepoProps (context: Context) {
 
 export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: RepoSourceActionProps) {
   const actionName = (repoSourceActionProps.namePrefix ?? '') + 'RepoSource';
-
   switch(repoSourceActionProps.repoProps.repoKind) {
     case RepoKind.CodeCommit:
       const codeCommitProps = repoSourceActionProps.repoProps as CodeCommitProps;

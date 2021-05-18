@@ -12,6 +12,8 @@ export interface SlsContProps extends StackProps {
 
 export class SlsContStack extends Stack {
 
+  public readonly func: DockerImageFunction;
+
   constructor(scope: Construct, id: string, slsContProps: SlsContProps) {
     super(scope, id, slsContProps);
     const lambdaCode = DockerImageCode.fromImageAsset(join(__dirname, 'sls-cont-dummy'));
@@ -20,14 +22,15 @@ export class SlsContStack extends Stack {
       vpc: slsContProps.vpc,
       logRetention: RetentionDays.ONE_DAY,
     });
+    this.func = lambdaObj;
     const methodOpts = {
       // ToDo: change type to custom or Cognito once the auth mechanism is added
       authorizationType: AuthorizationType.NONE,
     };
     const apiGatewayProps = {
       defaultMethodOptions: methodOpts,
-    }
-    new ApiGatewayToLambda(this, 'Serverless', {
+    };
+    new ApiGatewayToLambda(this, 'SlsCont', {
       existingLambdaObj: lambdaObj,
       apiGatewayProps,
     });

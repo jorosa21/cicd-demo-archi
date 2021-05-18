@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { Construct, Stack, StackProps, Arn, Duration } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
+import { Distribution } from '@aws-cdk/aws-cloudfront';
 import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
@@ -13,7 +14,7 @@ export interface RepoCdnPipelineProps extends StackProps {
   repoProps: RepoProps,
   stageProps: StageProps,
   distributionSource: Bucket,
-  distributionId: string,
+  distribution: Distribution,
   pipelineCache: Bucket,
 }
 
@@ -25,7 +26,7 @@ export class RepoCdnPipelineStack extends Stack {
     const repoOutput = new Artifact('RepoOutput');
     const repoSource = buildRepoSourceAction(this, {
       repoProps: repoCdnPipelineProps.repoProps,
-      repoOutput: repoOutput,
+      repoOutput,
     });
     const sourceStage = {
       stageName: 'Source',
@@ -37,17 +38,17 @@ export class RepoCdnPipelineStack extends Stack {
     const buildCache = Cache.bucket(repoCdnPipelineProps.pipelineCache, {
       prefix: 'build'
     });
-    const linuxEnvironment = {
+    const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
     };
-    const buildProject = new PipelineProject(this, 'BuildProject', {
-      environment: linuxEnvironment,
+    const customProject = new PipelineProject(this, 'CustomProject', {
+      environment: linuxEnv,
       cache: buildCache,
     });
     const buildOutput = new Artifact('BuildOutput');
-    const linuxBuild = new CodeBuildAction({
-      actionName: 'LinuxBuild',
-      project: buildProject,
+    const customBuild = new CodeBuildAction({
+      actionName: 'CustomBuild',
+      project: customProject,
       input: repoOutput,
       outputs: [
         buildOutput,
@@ -56,7 +57,7 @@ export class RepoCdnPipelineStack extends Stack {
     const buildStage = {
       stageName: 'Build',
       actions: [
-        linuxBuild,
+        customBuild,
       ],
     };
     pipelineStages.push(buildStage);
@@ -75,7 +76,7 @@ export class RepoCdnPipelineStack extends Stack {
       });
       const testProject = new PipelineProject(this, 'TestProject', {
         buildSpec: testSpec,
-        environment: linuxEnvironment,
+        environment: linuxEnv,
         cache: testCache,
       });
       const linuxTest = new CodeBuildAction({
@@ -108,7 +109,7 @@ export class RepoCdnPipelineStack extends Stack {
       service: 'cloudfront',
       resource: 'distribution',
       region: '',
-      resourceName: repoCdnPipelineProps.distributionId,
+      resourceName: repoCdnPipelineProps.distribution.distributionId,
     }, this);
     const distributionPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
@@ -131,7 +132,7 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     });
     const distributionProps = {
-      distributionId: repoCdnPipelineProps.distributionId,
+      distributionId: repoCdnPipelineProps.distribution.distributionId,
     };
     const cacheInvalidate = new LambdaInvokeAction({
       actionName: 'CacheInvalidate',

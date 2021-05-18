@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 logger = getLogger()
 logger.setLevel(INFO)
 
-cf = client('cloudfront')
+func = client('lambda')
 
 def on_event(event, context):
   logger.info('Received event: %s' % dumps(event))
@@ -17,36 +17,23 @@ def on_event(event, context):
   raise Exception('Invalid request type: %s' % request_type)
 
 def on_create(event):
-  distribution_id = event['ResourceProperties']['distributionId']
+  func_name = event['ResourceProperties']['funcName']
+  repo_uri = event['ResourceProperties']['repoUri']
   try:
-    subscribe(distribution_id)
+    update_code(func_name, repo_uri)
   except ClientError as e:
     logger.error('Error: %s', e)
     raise e
   return
 
 def on_delete(event):
-  distribution_id = event['ResourceProperties']['distributionId']
-  try:
-    unsubscribe(distribution_id)
-  except ClientError as e:
-    logger.error('Error: %s', e)
-    raise e
+  # Todo: what should be done here?
   return
 
-def subscribe(distribution_id):
-  cf.create_monitoring_subscription(
-    DistributionId=distribution_id,
-    MonitoringSubscription={
-      'RealtimeMetricsSubscriptionConfig': {
-        'RealtimeMetricsSubscriptionStatus': 'Enabled'
-      }
-    }
-  )
-  return
-
-def unsubscribe(distribution_id):
-  cf.delete_monitoring_subscription(
-    DistributionId=distribution_id
+def update_code(func_name, repo_uri):
+  func.update_function_code(
+    FunctionName=func_name,
+    ImageUri=repo_uri,
+    Publish=True
   )
   return

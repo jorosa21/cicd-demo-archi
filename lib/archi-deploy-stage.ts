@@ -7,11 +7,6 @@ import { NetworkStack } from './network-stack';
 import { SlsContStack } from './sls-cont-stack';
 import { Context, buildRepoProps, buildStageProps } from './pipeline-helper';
 
-interface ServicePipelineContext {
-  app: Context,
-  archi: Context,
-}
-
 /**
  * Deployable unit of entire architecture
  */
@@ -35,27 +30,23 @@ export class ArchiDeployStage extends Stage {
       repoProps: siteRepoProps,
       stageProps: siteStageProps,
       distributionSource: site.sourceBucket,
-      distributionId: site.distributionId,
+      distribution: site.distribution,
       pipelineCache: sitePipelineCache.bucket,
       env: siteEnv,
     });
     const serviceNetwork = new NetworkStack(this, 'ServiceNetwork');
-    const servicePipelineCache = new PipelineCacheStack(this, 'ServicePipelineCache');
     const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
     Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
-      const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, ServicePipelineContext];
-      const app = new SlsContStack(this, serviceId, {
+      const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, Context];
+      const service = new SlsContStack(this, serviceId, {
         vpc: serviceNetwork.vpc,
       });
-      const appRepoProps = buildRepoProps(servicePipelineContext.app);
-      const archiRepoProps = buildRepoProps(servicePipelineContext.archi);
+      const serviceRepoProps = buildRepoProps(servicePipelineContext);
       const serviceStageProps = buildStageProps(servicePipelineContext);
       new RepoSlsContPipelineStack(this, serviceId + 'Pipeline', {
-        serviceId,
-        appRepoProps,
-        archiRepoProps,
+        repoProps: serviceRepoProps,
         stageProps: serviceStageProps,
-        pipelineCache: servicePipelineCache.bucket,
+        func: service.func,
       });
     });
   }

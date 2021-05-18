@@ -1,17 +1,18 @@
-import { Construct, Stack, StackProps } from '@aws-cdk/core';
-import { Bucket } from '@aws-cdk/aws-s3';
+import { join } from 'path';
+import { Construct, Stack, StackProps, Duration } from '@aws-cdk/core';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
+import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { CodeBuildAction, CloudFormationCreateUpdateStackAction, ManualApprovalAction } from '@aws-cdk/aws-codepipeline-actions';
+import { CodeBuildAction, ManualApprovalAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
+import { DockerImageFunction, Function, Runtime, Code } from '@aws-cdk/aws-lambda';
+import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
+import { RetentionDays } from '@aws-cdk/aws-logs';
 import { RepoProps, StageProps, buildRepoSourceAction } from './pipeline-helper';
 
 export interface RepoSlsContPipelineProps extends StackProps {
-  serviceId: string,
-  appRepoProps: RepoProps,
-  archiRepoProps: RepoProps,
+  repoProps: RepoProps,
   stageProps: StageProps,
-  pipelineCache: Bucket,
+  func: DockerImageFunction,
 }
 
 export class RepoSlsContPipelineStack extends Stack {
@@ -19,23 +20,15 @@ export class RepoSlsContPipelineStack extends Stack {
   constructor(scope: Construct, id: string, repoSlsContPipelineProps: RepoSlsContPipelineProps) {
     super(scope, id, repoSlsContPipelineProps);
     const pipelineStages = [];
-    const appOutput = new Artifact('AppOutput');
-    const appSource = buildRepoSourceAction(this, {
-      repoProps: repoSlsContPipelineProps.appRepoProps,
-      namePrefix: 'App',
-      repoOutput: appOutput,
-    });
-    const archiOutput = new Artifact('ArchiOutput');
-    const archiSource = buildRepoSourceAction(this, {
-      repoProps: repoSlsContPipelineProps.archiRepoProps,
-      namePrefix: 'Archi',
-      repoOutput: archiOutput,
+    const repoOutput = new Artifact('RepoOutput');
+    const repoSource = buildRepoSourceAction(this, {
+      repoProps: repoSlsContPipelineProps.repoProps,
+      repoOutput,
     });
     const sourceStage = {
       stageName: 'Source',
       actions: [
-        appSource,
-        archiSource,
+        repoSource,
       ],
     };
     pipelineStages.push(sourceStage);
@@ -76,64 +69,12 @@ export class RepoSlsContPipelineStack extends Stack {
     const contBuild = new CodeBuildAction({
       actionName: 'ContBuild',
       project: contProject,
-      input: appOutput,
-    });
-    const stackId = 'Sls';
-    const serviceTemplateFilename = stackId + '.template.json';
-    const cdkSpec = BuildSpec.fromObject({
-      version: '0.2',
-      env: {
-        variables: {
-          VPC_ID: 'repoSlsContPipelineProps.vpcId',
-          REPO_NAME: contRepo.repositoryName,
-          STACK_ID: stackId,
-        },
-      },
-      phases: {
-        install: {
-          commands: 'yarn install',
-        },
-        build: {
-          commands: 'npx cdk synth -c vpcId=${VPC_ID} -c repoName=${REPO_NAME} -c stackId=${STACK_ID}',
-        },
-      },
-      artifacts: {
-        'base-directory': 'cdk.out',
-        files: [
-          serviceTemplateFilename,
-        ],
-      },
-      cache: {
-        paths: [
-          'node_modules/**/*',
-        ],
-      },  
-    });
-    const linuxEnv = {
-      buildImage: LinuxBuildImage.STANDARD_5_0,
-    };
-    const cdkCache = Cache.bucket(repoSlsContPipelineProps.pipelineCache, {
-      prefix: repoSlsContPipelineProps.serviceId,
-    });
-    const cdkProject = new PipelineProject(this, 'CdkProject', {
-      environment: linuxEnv,
-      buildSpec: cdkSpec,
-      cache: cdkCache,
-    });
-    const cdkOutput = new Artifact('CdkOutput');
-    const cdkBuild = new CodeBuildAction({
-      actionName: 'CdkBuild',
-      project: cdkProject,
-      input: archiOutput,
-      outputs: [
-        cdkOutput,
-      ],
+      input: repoOutput,
     });
     const buildStage = {
       stageName: 'Build',
       actions: [
         contBuild,
-        cdkBuild,
       ],
     };
     /* Todo:
@@ -153,17 +94,39 @@ export class RepoSlsContPipelineStack extends Stack {
       };
       pipelineStages.push(approvalStage);
     };
-    const lambdaTemplate = cdkOutput.atPath(serviceTemplateFilename);
-    const lambdaDeploy = new CloudFormationCreateUpdateStackAction({
-      actionName: 'LambdaDeploy',
-      stackName: repoSlsContPipelineProps.serviceId,
-      templatePath: lambdaTemplate,
-      adminPermissions: true,
+    const deployPolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        'lambda:UpdateFunctionCode',
+      ],
+      resources: [
+        repoSlsContPipelineProps.func.functionArn,
+      ],
+    });
+    const deployCode = Code.fromAsset(join(__dirname, 'sls-cont-deploy-handler'));
+    const deployHandler = new Function(this, 'DeployHandler', {
+      runtime: Runtime.PYTHON_3_8,
+      handler: 'slsdeploy.on_event',
+      code: deployCode,
+      timeout: Duration.minutes(1),
+      logRetention: RetentionDays.ONE_DAY,
+      initialPolicy: [
+        deployPolicy,
+      ],
+    });
+    const deployProps = {
+      funcName: repoSlsContPipelineProps.func.functionName,
+      repoUri: contRepo.repositoryUri,
+    };
+    const slsDeploy = new LambdaInvokeAction({
+      actionName: 'SlsDeploy',
+      lambda: deployHandler,
+      userParameters: deployProps,
     });
     const deployStage = {
       stageName: 'Deploy',
       actions: [
-        lambdaDeploy,
+        slsDeploy,
       ],
     };
     pipelineStages.push(deployStage);
