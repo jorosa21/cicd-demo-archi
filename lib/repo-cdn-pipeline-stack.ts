@@ -8,7 +8,8 @@ import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
-import { RepoProps, StageProps, buildRepoSourceAction, ContextError } from './pipeline-helper';
+import { buildRepoSourceAction } from './pipeline-helper';
+import { RepoProps, StageProps, ContextError } from './context-helper';
 
 export interface RepoCdnPipelineProps extends StackProps {
   repoProps: RepoProps,

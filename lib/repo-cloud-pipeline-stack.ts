@@ -3,7 +3,8 @@ import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { ArchiDeployStage } from './archi-deploy-stage';
-import { RepoProps, StageProps, buildRepoSourceAction } from './pipeline-helper';
+import { buildRepoSourceAction } from './pipeline-helper';
+import { RepoProps, StageProps } from './context-helper';
 
 export interface RepoCloudPipelineProps extends StackProps {
   repoProps: RepoProps,

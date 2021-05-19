@@ -2,77 +2,12 @@ import { Repository, IRepository } from '@aws-cdk/aws-codecommit';
 import { Artifact } from '@aws-cdk/aws-codepipeline';
 import { GitHubSourceAction, CodeCommitSourceAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Construct, SecretValue } from '@aws-cdk/core';
-
-enum RepoKind {
-  CodeCommit = 'CODECOMMIT',
-  GitHub = 'GITHUB',
-} 
-
-interface CodeCommitProps {
-  repoKind: RepoKind.CodeCommit,
-  repoName: string,
-  createRepo: boolean,
-}
-
-interface GitHubProps {
-  repoKind: RepoKind.GitHub,
-  repoName: string,
-  tokenName: string,
-  owner: string,
-}
-
-export type RepoProps = CodeCommitProps | GitHubProps;
+import { RepoKind, CodeCommitProps, GitHubProps, RepoProps } from './context-helper'
 
 export interface RepoSourceActionProps {
   repoProps: RepoProps,
   namePrefix?: string,
   repoOutput: Artifact,
-}
-
-export interface StageProps {
-  enableStaging?: boolean,
-  enableTest?: boolean,
-  enableApproval?: boolean,
-  enableDeploy?: boolean,
-  privilegedBuild?: boolean,
-  stagingSpecFilename?: string,
-  testSpecFilename?: string,
-  deploySpecFilename?: string,
-}
-
-export interface Context {
-  [key: string]: any,
-}
-
-export class ContextError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ContextError";
-  }
-}
-
-export function buildRepoProps (context: Context) {
-  let repoProps: RepoProps;
-  const repoKind = context.repoKind.toUpperCase();
-  switch(repoKind) {
-    case RepoKind.CodeCommit:
-      repoProps = {
-        repoKind,
-        repoName: context.repoName,
-        createRepo: context.createRepo,
-      };
-      return repoProps;
-    case RepoKind.GitHub:
-      repoProps = {
-        repoKind,
-        repoName: context.repoName,
-        tokenName: context.tokenName,
-        owner: context.owner,
-      };
-      return repoProps;
-    default:
-      throw new ContextError('Unsupported Repository Type');
-  };
 }
 
 export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: RepoSourceActionProps) {
@@ -107,18 +42,4 @@ export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: 
     default:
       throw new Error('Unsupported Type');
   };
-}
-
-export function buildStageProps (context: Context) {
-  const stageProps: StageProps = {
-    enableStaging: context.enableStaging,
-    enableTest: context.enableTest,
-    enableApproval: context.enableApproval,
-    enableDeploy: context.enableDeploy,
-    privilegedBuild: context.privilegedBuild,
-    stagingSpecFilename: context.stagingSpecFilename,
-    testSpecFilename: context.testSpecFilename,
-    deploySpecFilename: context.deploySpecFilename,  
-  };
-  return stageProps;
 }

@@ -4,26 +4,27 @@ import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, ManualApprovalAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { DockerImageFunction, Function, Runtime, Code } from '@aws-cdk/aws-lambda';
+import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
+import { Cluster, FargateService, FargateTaskDefinition, ContainerImage } from '@aws-cdk/aws-ecs';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { RepoProps, StageProps } from './context-helper';
 
-export interface RepoSlsContPipelineProps extends StackProps {
+export interface RepoDbContPipelineProps extends StackProps {
   repoProps: RepoProps,
   stageProps: StageProps,
-  func: DockerImageFunction,
+  task: FargateTaskDefinition,
 }
 
-export class RepoSlsContPipelineStack extends Stack {
+export class RepoDbContPipelineStack extends Stack {
 
-  constructor(scope: Construct, id: string, repoSlsContPipelineProps: RepoSlsContPipelineProps) {
-    super(scope, id, repoSlsContPipelineProps);
+  constructor(scope: Construct, id: string, repoDbContPipelineProps: RepoDbContPipelineProps) {
+    super(scope, id, repoDbContPipelineProps);
     const pipelineStages = [];
     const repoOutput = new Artifact('RepoOutput');
     const repoSource = buildRepoSourceAction(this, {
-      repoProps: repoSlsContPipelineProps.repoProps,
+      repoProps: repoDbContPipelineProps.repoProps,
       repoOutput,
     });
     const sourceStage = {
@@ -83,7 +84,7 @@ export class RepoSlsContPipelineStack extends Stack {
      * config - filename of testspec file; additional commands for contSpec
      */
     pipelineStages.push(buildStage);
-    if (repoSlsContPipelineProps.stageProps.enableApproval) {
+    if (repoDbContPipelineProps.stageProps.enableApproval) {
       const approvalAction = new ManualApprovalAction({
         actionName: 'ManualApproval',
       });
@@ -95,48 +96,48 @@ export class RepoSlsContPipelineStack extends Stack {
       };
       pipelineStages.push(approvalStage);
     };
-    const deployPolicy = new PolicyStatement({
-      effect: Effect.ALLOW,
-      actions: [
-        'lambda:UpdateFunctionCode',
-      ],
-      resources: [
-        repoSlsContPipelineProps.func.functionArn,
-      ],
-    });
-    const deployCode = Code.fromAsset(join(__dirname, 'sls-cont-deploy-handler'));
-    const deployHandler = new Function(this, 'DeployHandler', {
-      runtime: Runtime.PYTHON_3_8,
-      handler: 'slsdeploy.on_event',
-      code: deployCode,
-      timeout: Duration.minutes(1),
-      logRetention: RetentionDays.ONE_DAY,
-      initialPolicy: [
-        deployPolicy,
-      ],
-    });
-    contRepo.grant(deployHandler,
-      "ecr:SetRepositoryPolicy",
-      "ecr:GetRepositoryPolicy",
-      "ecr:InitiateLayerUpload"
-    );
-    const deployProps = {
-      funcName: repoSlsContPipelineProps.func.functionName,
-      repoUri: contRepo.repositoryUri + ':latest',
-    };
-    const slsDeploy = new LambdaInvokeAction({
-      actionName: 'SlsDeploy',
-      lambda: deployHandler,
-      userParameters: deployProps,
-    });
-    const deployStage = {
-      stageName: 'Deploy',
-      actions: [
-        slsDeploy,
-      ],
-    };
-    pipelineStages.push(deployStage);
-    new Pipeline(this, 'RepoSlsContPipeline', {
+    // const deployPolicy = new PolicyStatement({
+    //   effect: Effect.ALLOW,
+    //   actions: [
+    //     'lambda:UpdateFunctionCode',
+    //   ],
+    //   resources: [
+    //     repoDbContPipelineProps.func.functionArn,
+    //   ],
+    // });
+    // const deployCode = Code.fromAsset(join(__dirname, 'sls-cont-deploy-handler'));
+    // const deployHandler = new Function(this, 'DeployHandler', {
+    //   runtime: Runtime.PYTHON_3_8,
+    //   handler: 'slsdeploy.on_event',
+    //   code: deployCode,
+    //   timeout: Duration.minutes(1),
+    //   logRetention: RetentionDays.ONE_DAY,
+    //   initialPolicy: [
+    //     deployPolicy,
+    //   ],
+    // });
+    // contRepo.grant(deployHandler,
+    //   "ecr:SetRepositoryPolicy",
+    //   "ecr:GetRepositoryPolicy",
+    //   "ecr:InitiateLayerUpload"
+    // );
+    // const deployProps = {
+    //   funcName: repoDbContPipelineProps.func.functionName,
+    //   repoUri: contRepo.repositoryUri + ':latest',
+    // };
+    // const slsDeploy = new LambdaInvokeAction({
+    //   actionName: 'SlsDeploy',
+    //   lambda: deployHandler,
+    //   userParameters: deployProps,
+    // });
+    // const deployStage = {
+    //   stageName: 'Deploy',
+    //   actions: [
+    //     slsDeploy,
+    //   ],
+    // };
+    // pipelineStages.push(deployStage);
+    new Pipeline(this, 'RepoDbContPipeline', {
       stages: pipelineStages,
       restartExecutionOnUpdate: false,
     });

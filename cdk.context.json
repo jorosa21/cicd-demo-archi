@@ -1,12 +1,14 @@
 {
   "archiPipelineId": "CicdDemoArchiPipeline",
   "ArchiPipeline": {
+    "cpu": 512,
     "repoKind": "CodeCommit",
     "repoName": "cicd-demo-archi",
     "createRepo": true,
     "enableApproval": true
   },
   "SitePipeline": {
+    "cpu": 512,
     "repoKind": "CodeCommit",
     "repoName": "angular-sample",
     "createRepo": true,
@@ -15,12 +17,14 @@
   },
   "ServicePipelines": {
     "Service1": {
+      "cpu": 512,
       "repoKind": "CodeCommit",
       "repoName": "net-sample1",
       "createRepo": true,
       "enableApproval": true
     },
     "Service2": {
+      "cpu": 512,
       "repoKind": "CodeCommit",
       "repoName": "net-sample2",
       "createRepo": true,
