@@ -10,17 +10,19 @@
   "SitePipeline": {
     "cpu": 512,
     "repoKind": "GitHub",
-    "repoName": "angular-sample",
-    "tokenName": "github-token",
-    "owner": "engr-lynx",
-    "enableTest": true,
+    "repoName": "durustreboot",
+    "tokenName": "MyFirstSecret",
+    "owner": "jorosa21",
+    "enableTest": false,
     "testSpecFilename": "testspec.yml"
   },
   "ServicePipelines": {
-    "Service1": {
+    "AccountManagementService": {
       "cpu": 512,
-      "repoKind": "CodeCommit",
-      "repoName": "net-sample1",
+      "repoKind": "Github",
+      "repoName": "AccountManagementService",
+      "tokenName": "MyFirstSecret",
+      "owner": "jorosa21",
       "createRepo": true,
       "enableApproval": true
     },
