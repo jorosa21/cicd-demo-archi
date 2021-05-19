@@ -2,8 +2,10 @@
   "archiPipelineId": "CicdDemoArchiPipeline",
   "ArchiPipeline": {
     "cpu": 512,
-    "repoKind": "CodeCommit",
+    "repoKind": "GitHub",
     "repoName": "cicd-demo-archi",
+    "tokenName": "MyFirstSecret",
+    "owner": "jorosa21",
     "createRepo": true,
     "enableApproval": true
   },
