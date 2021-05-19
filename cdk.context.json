@@ -9,9 +9,10 @@
   },
   "SitePipeline": {
     "cpu": 512,
-    "repoKind": "CodeCommit",
+    "repoKind": "GitHub",
     "repoName": "angular-sample",
-    "createRepo": true,
+    "tokenName": "github-token",
+    "owner": "engr-lynx",
     "enableTest": true,
     "testSpecFilename": "testspec.yml"
   },
@@ -25,9 +26,10 @@
     },
     "Service2": {
       "cpu": 512,
-      "repoKind": "CodeCommit",
-      "repoName": "net-sample2",
-      "createRepo": true,
+      "repoKind": "GitHub",
+      "repoName": "net-sample",
+      "tokenName": "github-token",
+      "owner": "engr-lynx",
       "enableApproval": true
     }
   }
